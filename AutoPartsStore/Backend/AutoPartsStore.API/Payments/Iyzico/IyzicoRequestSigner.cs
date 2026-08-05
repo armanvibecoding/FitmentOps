@@ -115,9 +115,11 @@ public static class IyzicoRequestSigner
         ArgumentException.ThrowIfNullOrWhiteSpace(uriPath);
 
         if (!uriPath.StartsWith("/", StringComparison.Ordinal) ||
+            uriPath.StartsWith("//", StringComparison.Ordinal) ||
             uriPath.Contains('?') ||
             uriPath.Contains('#') ||
-            Uri.TryCreate(uriPath, UriKind.Absolute, out _))
+            uriPath.Contains('\\') ||
+            uriPath.Any(character => char.IsWhiteSpace(character) || char.IsControl(character)))
         {
             throw new ArgumentException(
                 "The iyzico signing input must be an absolute URI path without query or fragment.",

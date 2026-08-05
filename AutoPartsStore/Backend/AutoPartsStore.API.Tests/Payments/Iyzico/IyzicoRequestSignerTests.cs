@@ -126,4 +126,23 @@ public sealed class IyzicoRequestSignerTests
             Encoding.UTF8.GetBytes(ExactBody),
             RandomKey));
     }
+
+    [Theory]
+    [InlineData("payment/initialize")]
+    [InlineData("//sandbox-api.iyzipay.com/payment/initialize")]
+    [InlineData("https://sandbox-api.iyzipay.com/payment/initialize")]
+    [InlineData("/payment/initialize?conversationId=order-42")]
+    [InlineData("/payment/initialize#fragment")]
+    [InlineData("/payment\\initialize")]
+    [InlineData("/payment initialize")]
+    [InlineData("/payment\ninitialize")]
+    public void Sign_RejectsUnsafeOrNonPathSigningInputs(string uriPath)
+    {
+        Assert.Throws<ArgumentException>(() => IyzicoRequestSigner.Sign(
+            ApiKey,
+            SecretKey,
+            uriPath,
+            Encoding.UTF8.GetBytes(ExactBody),
+            RandomKey));
+    }
 }

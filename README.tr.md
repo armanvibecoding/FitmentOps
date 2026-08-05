@@ -2,7 +2,7 @@
 
 **Araç uyumluluğu odaklı otomotiv ticaret ve operasyon platformu**
 
-[Ana README](../README.md) · [Güvenlik politikası](../SECURITY.md) · [Katkı rehberi](../CONTRIBUTING.md)
+[Proje özeti](README.md) · [English](README.en.md) · [Güvenlik politikası](SECURITY.md) · [Katkı rehberi](CONTRIBUTING.md)
 
 FitmentOps; araç uyumluluğu kanıtını, ürün keşfini, checkout işlemlerini, ödeme ve iade durumlarını, sevkiyatı, RMA süreçlerini, B2B fiyatlandırmayı, tedarikçi yönetimini ve yönetim operasyonlarını tek platformda birleştirir.
 
@@ -138,4 +138,4 @@ Canlı satıştan önce en az şu işler tamamlanmalıdır:
 
 ## Lisans
 
-Proje [Apache License 2.0](../LICENSE) ile lisanslanmıştır. Ürün adları ve harici sağlayıcı markaları ilgili sahiplerine aittir.
+Proje [Apache License 2.0](LICENSE) ile lisanslanmıştır. Ürün adları ve harici sağlayıcı markaları ilgili sahiplerine aittir.
