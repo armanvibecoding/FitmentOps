@@ -50,7 +50,7 @@ const SeoHead = ({ title, description, canonicalPath, structuredData }) => {
     if (structuredData) {
       script = document.createElement('script');
       script.type = 'application/ld+json';
-      script.dataset.parcaMuhendisiSeo = 'true';
+      script.dataset.fitmentOpsSeo = 'true';
       script.textContent = JSON.stringify(structuredData).replace(/</g, '\\u003c');
       document.head.appendChild(script);
     }

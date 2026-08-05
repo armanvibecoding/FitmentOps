@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { brand } from '../config/brand';
 
 const Footer = () => {
   return (
@@ -35,15 +36,15 @@ const Footer = () => {
           <div className="footer-section">
             <h3>İletişim</h3>
             <ul>
-              <li>Telefon: 0850 123 45 67</li>
-              <li>Email: info@parcamuhendisi.com</li>
-              <li>Adres: İstanbul, Türkiye</li>
+              <li><Link to="/iletisim">Destek merkezi</Link></li>
+              {brand.supportEmail && <li>E-posta: {brand.supportEmail}</li>}
+              <li>Operasyon bölgesi: Türkiye</li>
             </ul>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; 2025 Parça Mühendisi. Tüm hakları saklıdır.</p>
+          <p>&copy; {new Date().getFullYear()} {brand.name}. Apache-2.0 lisansı ile sunulur.</p>
         </div>
       </div>
     </footer>

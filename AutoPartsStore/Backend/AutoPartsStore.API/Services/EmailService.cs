@@ -23,7 +23,7 @@ namespace AutoPartsStore.API.Services
                 var body = $@"
                     <html>
                     <body style='font-family: Arial, sans-serif;'>
-                        <h2>Parça Mühendisi - Sipariş Onayı</h2>
+                        <h2>FitmentOps - Sipariş Onayı</h2>
                         <p>Merhaba {Encode(order.CustomerName)},</p>
                         <p>Siparişiniz başarıyla alınmıştır.</p>
 
@@ -47,7 +47,7 @@ namespace AutoPartsStore.API.Services
                         <p>Siparişinizi <a href='http://localhost:5173/siparis-takibi'>buradan</a> takip edebilirsiniz.</p>
 
                         <p>Teşekkür ederiz!</p>
-                        <p><strong>Parça Mühendisi</strong></p>
+                        <p><strong>FitmentOps</strong></p>
                     </body>
                     </html>
                 ";
@@ -99,7 +99,7 @@ namespace AutoPartsStore.API.Services
             var smtpHost = _configuration["EmailSettings:SmtpServer"];
             var smtpPortValue = _configuration["EmailSettings:SmtpPort"];
             var fromEmail = _configuration["EmailSettings:SenderEmail"];
-            var senderName = _configuration["EmailSettings:SenderName"] ?? "Parça Mühendisi";
+            var senderName = _configuration["EmailSettings:SenderName"] ?? "FitmentOps";
             var username = _configuration["EmailSettings:Username"];
             var fromPassword = _configuration["EmailSettings:Password"];
 

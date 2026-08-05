@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import VehicleCompatibility from '../components/VehicleCompatibility';
 import SeoHead from '../components/SeoHead';
+import { brand } from '../config/brand';
 import './ProductDetailPage.css';
 
 const ProductDetailPage = () => {
@@ -66,7 +67,7 @@ const ProductDetailPage = () => {
       };
     }
     return {
-      title: `${product.name} | Parça Mühendisi`,
+      title: `${product.name} | ${brand.name}`,
       description: (product.description || `${product.name} yedek parça detayları ve araç uyumluluğu.`).slice(0, 160),
       canonicalPath: `/product/${product.id}`,
       structuredData,

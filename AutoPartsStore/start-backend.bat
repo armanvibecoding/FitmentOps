@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo Parça Mühendisi - Backend Başlatılıyor
+echo FitmentOps - Backend Başlatılıyor
 echo ========================================
 echo.
 

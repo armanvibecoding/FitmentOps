@@ -1,32 +1,33 @@
 import { useState } from 'react';
+import { brand } from '../config/brand';
 import './InfoPages.css';
 
-const ContactPage = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: ''
-  });
+const initialForm = {
+  name: '',
+  email: '',
+  subject: '',
+  message: '',
+};
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+const ContactPage = () => {
+  const [formData, setFormData] = useState(initialForm);
+
+  const handleChange = (event) => {
+    setFormData((current) => ({
+      ...current,
+      [event.target.name]: event.target.value,
+    }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert('Mesajınız alındı! En kısa sürede size dönüş yapacağız.');
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: ''
-    });
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!brand.supportEmail) return;
+
+    const subject = encodeURIComponent(`[${brand.name}] ${formData.subject}`);
+    const body = encodeURIComponent(
+      `Ad Soyad: ${formData.name}\nE-posta: ${formData.email}\n\n${formData.message}`
+    );
+    window.location.href = `mailto:${brand.supportEmail}?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -37,112 +38,74 @@ const ContactPage = () => {
         <div className="info-content">
           <div className="contact-grid">
             <div className="contact-info">
-              <h2>İletişim Bilgileri</h2>
+              <h2>Destek kanalları</h2>
 
-              <div className="contact-item">
-                <div className="contact-icon">📞</div>
-                <div>
-                  <h3>Telefon</h3>
-                  <p>0850 123 45 67</p>
-                  <p className="text-small">Hafta içi 09:00 - 18:00</p>
+              {brand.supportEmail ? (
+                <div className="contact-item">
+                  <div className="contact-icon">✉️</div>
+                  <div>
+                    <h3>E-posta</h3>
+                    <a href={`mailto:${brand.supportEmail}`}>{brand.supportEmail}</a>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p>
+                  Bu ortam için destek e-postası henüz yapılandırılmamıştır.
+                  Operatör, <code>VITE_SUPPORT_EMAIL</code> değerini tanımladığında
+                  iletişim formu etkinleşir.
+                </p>
+              )}
 
-              <div className="contact-item">
-                <div className="contact-icon">✉️</div>
-                <div>
-                  <h3>E-posta</h3>
-                  <p>info@parcamuhendisi.com</p>
-                  <p className="text-small">24 saat içinde yanıt</p>
+              {brand.supportPhone && (
+                <div className="contact-item">
+                  <div className="contact-icon">📞</div>
+                  <div>
+                    <h3>Telefon</h3>
+                    <p>{brand.supportPhone}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="contact-item">
-                <div className="contact-icon">📍</div>
-                <div>
-                  <h3>Adres</h3>
-                  <p>Atatürk Mahallesi</p>
-                  <p>Otomotiv Caddesi No: 123</p>
-                  <p>Kadıköy / İstanbul</p>
+              {brand.businessAddress && (
+                <div className="contact-item">
+                  <div className="contact-icon">📍</div>
+                  <div>
+                    <h3>Adres</h3>
+                    <p>{brand.businessAddress}</p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="contact-item">
-                <div className="contact-icon">⏰</div>
-                <div>
-                  <h3>Çalışma Saatleri</h3>
-                  <p>Pazartesi - Cuma: 09:00 - 18:00</p>
-                  <p>Cumartesi: 09:00 - 15:00</p>
-                  <p>Pazar: Kapalı</p>
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="contact-form-container">
-              <h2>Bize Ulaşın</h2>
+              <h2>Destek e-postası oluştur</h2>
               <form className="contact-form" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="name">Ad Soyad *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
+                  <input id="name" name="name" value={formData.name} onChange={handleChange} required />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="email">E-posta *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="phone">Telefon</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
+                  <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="subject">Konu *</label>
-                  <input
-                    type="text"
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    required
-                  />
+                  <input id="subject" name="subject" value={formData.subject} onChange={handleChange} required />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="message">Mesajınız *</label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows="5"
-                    value={formData.message}
-                    onChange={handleChange}
-                    required
-                  ></textarea>
+                  <textarea id="message" name="message" rows="5" value={formData.message} onChange={handleChange} required />
                 </div>
 
-                <button type="submit" className="submit-btn">
-                  Gönder
+                <button type="submit" className="submit-btn" disabled={!brand.supportEmail}>
+                  E-posta oluştur
                 </button>
+                <p className="text-small">
+                  Form verileri sunucuya gönderilmez; cihazınızdaki e-posta uygulamasında taslak oluşturur.
+                </p>
               </form>
             </div>
           </div>

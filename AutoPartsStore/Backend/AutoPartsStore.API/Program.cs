@@ -119,8 +119,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "AutoPartsStore",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "AutoPartsStoreUsers",
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "FitmentOps.API",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "FitmentOps.Web",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });

@@ -1,5 +1,5 @@
 Write-Host "========================================"
-Write-Host "Parca Muhendisi - Frontend Baslatiliyor"
+Write-Host "FitmentOps - Frontend Baslatiliyor"
 Write-Host "========================================"
 Write-Host ""
 
