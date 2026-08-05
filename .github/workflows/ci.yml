@@ -56,15 +56,15 @@ jobs:
       - name: Start frontend for browser smoke
         working-directory: AutoPartsStore/Frontend/client
         run: |
-          npm run dev -- --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/parca-vite.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/parca-vite.pid"
+          npm run dev -- --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/fitmentops-vite.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/fitmentops-vite.pid"
           for attempt in {1..40}; do
             if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
               exit 0
             fi
             sleep 0.25
           done
-          cat "$RUNNER_TEMP/parca-vite.log"
+          cat "$RUNNER_TEMP/fitmentops-vite.log"
           exit 1
 
       - name: Run checkout browser smoke
@@ -75,8 +75,8 @@ jobs:
       - name: Stop frontend browser-smoke server
         if: always()
         run: |
-          if [ -f "$RUNNER_TEMP/parca-vite.pid" ]; then
-            kill "$(cat "$RUNNER_TEMP/parca-vite.pid")" 2>/dev/null || true
+          if [ -f "$RUNNER_TEMP/fitmentops-vite.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/fitmentops-vite.pid")" 2>/dev/null || true
           fi
 
       - name: Set up .NET
@@ -88,16 +88,16 @@ jobs:
         run: dotnet tool restore
 
       - name: Restore backend
-        run: dotnet restore "parca muh.sln"
+        run: dotnet restore FitmentOps.sln
 
       - name: Audit NuGet dependencies
-        run: dotnet list "parca muh.sln" package --vulnerable --include-transitive
+        run: dotnet list FitmentOps.sln package --vulnerable --include-transitive
 
       - name: Build backend with warnings as errors
-        run: dotnet build "parca muh.sln" --configuration Release --no-restore -warnaserror
+        run: dotnet build FitmentOps.sln --configuration Release --no-restore -warnaserror
 
       - name: Verify backend formatting
-        run: dotnet format "parca muh.sln" --verify-no-changes --no-restore
+        run: dotnet format FitmentOps.sln --verify-no-changes --no-restore
 
       - name: Verify EF Core migration snapshot
         env:

@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { categoriesAPI, brandsAPI } from '../services/api';
+import { brand } from '../config/brand';
 
 const Header = () => {
   const { getCartCount } = useCart();
@@ -64,7 +65,7 @@ const Header = () => {
     <header className="header">
       <div className="header-top">
         <div className="container">
-          <div>Hoş Geldiniz! Yedek Parça Mühendisi</div>
+          <div>{brand.tagline}</div>
           <div>
             {user ? (
               <div className="user-menu-container">
@@ -111,7 +112,7 @@ const Header = () => {
       <div className="header-main">
         <div className="container">
           <Link to="/" className="logo">
-            Parça Mühendisi
+            {brand.name}
           </Link>
 
           <div className="search-bar">
