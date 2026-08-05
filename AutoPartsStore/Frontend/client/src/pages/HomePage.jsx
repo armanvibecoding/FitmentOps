@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import ProductCard from '../components/ProductCard';
 import Pagination from '../components/Pagination';
 import { productsAPI, categoriesAPI } from '../services/api';

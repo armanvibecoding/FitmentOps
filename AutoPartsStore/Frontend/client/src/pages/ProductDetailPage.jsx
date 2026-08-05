@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams, useNavigate } from 'react-router';
 import { productsAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import VehicleCompatibility from '../components/VehicleCompatibility';
+import SeoHead from '../components/SeoHead';
 import './ProductDetailPage.css';
 
 const ProductDetailPage = () => {
@@ -15,11 +17,7 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
 
-  useEffect(() => {
-    fetchProduct();
-  }, [id]);
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
       setLoading(true);
       const response = await productsAPI.getById(id);
@@ -29,7 +27,51 @@ const ProductDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
+
+  const seoData = useMemo(() => {
+    if (!product) return null;
+    const productUrl = new URL(`/product/${product.id}`, window.location.origin).href;
+    const imageUrl = product.imageUrl
+      ? new URL(product.imageUrl, window.location.origin).href
+      : undefined;
+    const structuredData = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description || product.name,
+      sku: product.partNumber,
+      url: productUrl,
+      ...(imageUrl ? { image: [imageUrl] } : {}),
+      ...(product.partBrand?.name ? { brand: { '@type': 'Brand', name: product.partBrand.name } } : {}),
+      offers: {
+        '@type': 'Offer',
+        url: productUrl,
+        priceCurrency: 'TRY',
+        price: Number(product.price).toFixed(2),
+        availability: product.stock > 0
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+      },
+    };
+    if (product.rating > 0 && product.reviewCount > 0) {
+      structuredData.aggregateRating = {
+        '@type': 'AggregateRating',
+        ratingValue: product.rating,
+        reviewCount: product.reviewCount,
+      };
+    }
+    return {
+      title: `${product.name} | Parça Mühendisi`,
+      description: (product.description || `${product.name} yedek parça detayları ve araç uyumluluğu.`).slice(0, 160),
+      canonicalPath: `/product/${product.id}`,
+      structuredData,
+    };
+  }, [product]);
 
   const handleQuantityChange = (delta) => {
     const newQuantity = quantity + delta;
@@ -75,6 +117,7 @@ const ProductDetailPage = () => {
 
   return (
     <div className="product-detail-page">
+      <SeoHead {...seoData} />
       <div className="container">
         {/* Breadcrumb */}
         <div className="breadcrumb">
@@ -194,6 +237,8 @@ const ProductDetailPage = () => {
               )}
             </div>
 
+            <VehicleCompatibility productId={product.id} />
+
             {/* Kargo Bilgisi */}
             <div className="shipping-info">
               <div className="shipping-item">
@@ -266,11 +311,11 @@ const ProductDetailPage = () => {
               <div className="tab-pane">
                 <h3>Uyumlu Araç Modelleri</h3>
                 <p>
-                  Bu ürün aşağıdaki araç modelleri ile uyumludur. Montaj öncesi lütfen
-                  aracınızın modelini ve yılını kontrol ediniz.
+                  Yukarıdaki araç seçiciden motor ve konfigürasyon bilgilerini girerek
+                  geçerli, doğrulanmış katalog kaydını kontrol edebilirsiniz.
                 </p>
                 <div className="compatible-vehicles">
-                  <p>Uyumluluk bilgisi için müşteri hizmetlerimizle iletişime geçebilirsiniz.</p>
+                  <p>Sonuç “bilinmiyor” ise sistem uyumluluk iddiasında bulunmaz; ürün kodu, VIN ve montaj bilgisi için uzman desteği alın.</p>
                 </div>
               </div>
             )}

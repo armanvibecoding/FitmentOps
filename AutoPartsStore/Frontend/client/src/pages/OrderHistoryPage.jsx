@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import axios from 'axios';
 import './OrderHistoryPage.css';
 
@@ -13,11 +13,7 @@ function OrderHistoryPage() {
   const [error, setError] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [token]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!token) {
       setLoading(false);
       return;
@@ -34,7 +30,11 @@ function OrderHistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const getStatusBadgeClass = (status) => {
     switch (status?.toLowerCase()) {

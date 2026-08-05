@@ -47,7 +47,7 @@ const FAQPage = () => {
         },
         {
           q: 'Fatura kesiliyor mu?',
-          a: 'Evet, tüm siparişler için e-fatura düzenlenmektedir. İsterseniz kurumsal fatura da talep edebilirsiniz.'
+          a: 'Otomatik e-Fatura/e-Arşiv entegrasyonu henüz aktif değildir. Faturalama özelliği devreye alındığında sipariş ekranında açıkça gösterilecektir.'
         }
       ]
     },

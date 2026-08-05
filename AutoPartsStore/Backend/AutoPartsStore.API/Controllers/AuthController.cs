@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using AutoPartsStore.API.Data;
 using AutoPartsStore.API.Models;
 using AutoPartsStore.API.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace AutoPartsStore.API.Controllers
 {
@@ -22,17 +24,20 @@ namespace AutoPartsStore.API.Controllers
 
         // POST: api/Auth/register
         [HttpPost("register")]
+        [EnableRateLimiting("authentication")]
         public async Task<ActionResult<AuthResponse>> Register(RegisterDto dto)
         {
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+
             // Check if email already exists
-            if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+            if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail))
             {
                 return BadRequest(new { message = "Bu email adresi zaten kullanılıyor." });
             }
 
             var user = new User
             {
-                Email = dto.Email,
+                Email = normalizedEmail,
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 FullName = dto.FullName,
                 Phone = dto.Phone ?? string.Empty,
@@ -42,7 +47,21 @@ namespace AutoPartsStore.API.Controllers
             };
 
             _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                _context.Entry(user).State = EntityState.Detached;
+                if (await _context.Users.AsNoTracking().AnyAsync(existing =>
+                        existing.Email == normalizedEmail))
+                {
+                    return Conflict(new { message = "Bu email adresi zaten kullanılıyor." });
+                }
+
+                throw;
+            }
 
             var token = _jwtService.GenerateToken(user);
 
@@ -62,9 +81,11 @@ namespace AutoPartsStore.API.Controllers
 
         // POST: api/Auth/login
         [HttpPost("login")]
+        [EnableRateLimiting("authentication")]
         public async Task<ActionResult<AuthResponse>> Login(LoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
             {
@@ -142,18 +163,35 @@ namespace AutoPartsStore.API.Controllers
                 return NotFound();
             }
 
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+
             // Check if email is being changed and if new email already exists
-            if (dto.Email != user.Email && await _context.Users.AnyAsync(u => u.Email == dto.Email))
+            if (normalizedEmail != user.Email &&
+                await _context.Users.AnyAsync(u => u.Email == normalizedEmail))
             {
                 return BadRequest(new { message = "Bu email adresi zaten kullanılıyor." });
             }
 
             // Update user information
             user.FullName = dto.Name;
-            user.Email = dto.Email;
+            user.Email = normalizedEmail;
             user.Phone = dto.Phone ?? string.Empty;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                _context.Entry(user).State = EntityState.Unchanged;
+                if (await _context.Users.AsNoTracking().AnyAsync(existing =>
+                        existing.Id != user.Id && existing.Email == normalizedEmail))
+                {
+                    return Conflict(new { message = "Bu email adresi zaten kullanılıyor." });
+                }
+
+                throw;
+            }
 
             return Ok(new UserDto
             {
@@ -169,15 +207,33 @@ namespace AutoPartsStore.API.Controllers
     // DTOs
     public class RegisterDto
     {
+        [Required]
+        [EmailAddress]
+        [StringLength(200)]
         public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(128, MinimumLength = 10)]
         public string Password { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(200, MinimumLength = 2)]
         public string FullName { get; set; } = string.Empty;
+
+        [Phone]
+        [StringLength(20)]
         public string? Phone { get; set; }
     }
 
     public class LoginDto
     {
+        [Required]
+        [EmailAddress]
+        [StringLength(200)]
         public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(128)]
         public string Password { get; set; } = string.Empty;
     }
 
@@ -198,8 +254,17 @@ namespace AutoPartsStore.API.Controllers
 
     public class UpdateProfileDto
     {
+        [Required]
+        [StringLength(200, MinimumLength = 2)]
         public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
+        [StringLength(200)]
         public string Email { get; set; } = string.Empty;
+
+        [Phone]
+        [StringLength(20)]
         public string? Phone { get; set; }
     }
 }

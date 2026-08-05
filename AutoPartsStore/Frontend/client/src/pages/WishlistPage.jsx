@@ -1,6 +1,6 @@
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import './WishlistPage.css';
 
 function WishlistPage() {

@@ -9,10 +9,20 @@ namespace AutoPartsStore.API.Services
     public class JwtService
     {
         private readonly IConfiguration _configuration;
+        private readonly string _jwtKey;
 
         public JwtService(IConfiguration configuration)
         {
             _configuration = configuration;
+
+            var configuredJwtKey = configuration["Jwt:Key"];
+            if (string.IsNullOrWhiteSpace(configuredJwtKey) || configuredJwtKey.Length < 32)
+            {
+                throw new InvalidOperationException(
+                    "Jwt:Key must be configured with at least 32 characters through a secure configuration source.");
+            }
+
+            _jwtKey = configuredJwtKey;
         }
 
         public string GenerateToken(User user)
@@ -25,8 +35,7 @@ namespace AutoPartsStore.API.Services
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                _configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong!"));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
 
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -34,7 +43,7 @@ namespace AutoPartsStore.API.Services
                 issuer: _configuration["Jwt:Issuer"] ?? "AutoPartsStore",
                 audience: _configuration["Jwt:Audience"] ?? "AutoPartsStoreUsers",
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(7),
+                expires: DateTime.UtcNow.AddHours(24),
                 signingCredentials: credentials
             );
 

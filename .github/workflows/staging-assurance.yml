@@ -1,0 +1,141 @@
+name: Staging assurance
+
+on:
+  workflow_dispatch:
+    inputs:
+      web_base_url:
+        description: HTTPS storefront staging base URL
+        required: true
+        type: string
+      api_base_url:
+        description: HTTPS API staging base URL
+        required: true
+        type: string
+      openapi_url:
+        description: HTTPS staging OpenAPI document URL
+        required: true
+        type: string
+      virtual_users:
+        description: k6 virtual users (1-50)
+        required: true
+        default: '10'
+        type: string
+      duration:
+        description: k6 duration such as 1m or 30s
+        required: true
+        default: 1m
+        type: string
+      authorized_target:
+        description: I confirm these staging targets are owned/authorized for DAST and load testing
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-assurance
+  cancel-in-progress: false
+
+jobs:
+  contracts-and-load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WEB_BASE_URL: ${{ inputs.web_base_url }}
+      API_BASE_URL: ${{ inputs.api_base_url }}
+      OPENAPI_URL: ${{ inputs.openapi_url }}
+      VUS: ${{ inputs.virtual_users }}
+      DURATION: ${{ inputs.duration }}
+      STAGING_ADMIN_BEARER_TOKEN: ${{ secrets.STAGING_ADMIN_BEARER_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate explicit authorization and bounded inputs
+        shell: bash
+        run: |
+          if [ "${{ inputs.authorized_target }}" != "true" ]; then
+            echo "Target authorization must be confirmed." >&2
+            exit 1
+          fi
+          for target in "$WEB_BASE_URL" "$API_BASE_URL" "$OPENAPI_URL"; do
+            case "$target" in
+              https://*) ;;
+              *) echo "Every target must use HTTPS." >&2; exit 1 ;;
+            esac
+          done
+          if ! [[ "$VUS" =~ ^([1-9]|[1-4][0-9]|50)$ ]]; then
+            echo "virtual_users must be between 1 and 50." >&2
+            exit 1
+          fi
+          if ! [[ "$DURATION" =~ ^[1-9][0-9]*[sm]$ ]]; then
+            echo "duration must be a bounded k6 duration such as 30s or 1m." >&2
+            exit 1
+          fi
+          if [ -z "$STAGING_ADMIN_BEARER_TOKEN" ]; then
+            echo "STAGING_ADMIN_BEARER_TOKEN is required." >&2
+            exit 1
+          fi
+
+      - name: Verify health, security headers, CORS and provider certification
+        run: >-
+          python scripts/verify_staging.py
+          --web-base-url "$WEB_BASE_URL"
+          --api-base-url "$API_BASE_URL"
+          --openapi-url "$OPENAPI_URL"
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run bounded critical-path load test
+        run: k6 run performance/critical-paths.js
+
+  zap-dast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      WEB_BASE_URL: ${{ inputs.web_base_url }}
+      OPENAPI_URL: ${{ inputs.openapi_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate explicit authorization and HTTPS targets
+        shell: bash
+        run: |
+          if [ "${{ inputs.authorized_target }}" != "true" ]; then
+            echo "Target authorization must be confirmed." >&2
+            exit 1
+          fi
+          case "$WEB_BASE_URL" in https://*) ;; *) exit 1 ;; esac
+          case "$OPENAPI_URL" in https://*) ;; *) exit 1 ;; esac
+          mkdir -p security/zap-output
+
+      - name: Run ZAP storefront baseline
+        run: >-
+          docker run --rm --network=host
+          -v "${{ github.workspace }}/security/zap-output:/zap/wrk:rw"
+          ghcr.io/zaproxy/zaproxy:stable
+          zap-baseline.py -t "$WEB_BASE_URL" -m 3 -I
+          -r zap-storefront.html -J zap-storefront.json
+
+      - name: Run ZAP OpenAPI scan
+        run: >-
+          docker run --rm --network=host
+          -v "${{ github.workspace }}/security/zap-output:/zap/wrk:rw"
+          ghcr.io/zaproxy/zaproxy:stable
+          zap-api-scan.py -t "$OPENAPI_URL" -f openapi -I
+          -r zap-api.html -J zap-api.json
+
+      - name: Upload ZAP reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-zap-reports
+          path: security/zap-output
+          if-no-files-found: error
+          retention-days: 14

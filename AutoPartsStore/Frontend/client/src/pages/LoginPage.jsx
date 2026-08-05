@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
@@ -89,11 +89,6 @@ const LoginPage = () => {
             </p>
           </div>
 
-          <div className="demo-credentials">
-            <p><strong>Demo Hesaplar:</strong></p>
-            <p>Admin: admin@parcamuhendisi.com / Admin123!</p>
-            <p>Kullanıcı: user@example.com / User123!</p>
-          </div>
         </div>
       </div>
     </div>

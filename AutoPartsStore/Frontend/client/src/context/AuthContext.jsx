@@ -94,7 +94,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAdmin = () => {
-    return user?.role === 'Admin';
+    return ['admin', 'superadmin', 'finance', 'warehouse', 'catalog', 'support']
+      .includes(user?.role?.toLowerCase());
   };
 
   const value = {

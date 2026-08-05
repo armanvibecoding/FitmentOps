@@ -19,28 +19,28 @@ namespace AutoPartsStore.API.Services
         {
             try
             {
-                var subject = $"Sipariş Onayı - {order.OrderNumber}";
+                var subject = $"Sipariş Onayı - {SafeSubjectValue(order.OrderNumber)}";
                 var body = $@"
                     <html>
                     <body style='font-family: Arial, sans-serif;'>
                         <h2>Parça Mühendisi - Sipariş Onayı</h2>
-                        <p>Merhaba {order.CustomerName},</p>
+                        <p>Merhaba {Encode(order.CustomerName)},</p>
                         <p>Siparişiniz başarıyla alınmıştır.</p>
 
                         <h3>Sipariş Detayları:</h3>
-                        <p><strong>Sipariş No:</strong> {order.OrderNumber}</p>
+                        <p><strong>Sipariş No:</strong> {Encode(order.OrderNumber)}</p>
                         <p><strong>Sipariş Tarihi:</strong> {order.OrderDate:dd.MM.yyyy HH:mm}</p>
                         <p><strong>Toplam Tutar:</strong> {order.TotalAmount:F2} TL</p>
 
                         <h3>Teslimat Bilgileri:</h3>
-                        <p>{order.ShippingAddress}</p>
-                        <p>{order.City} / {order.PostalCode}</p>
-                        <p><strong>Telefon:</strong> {order.CustomerPhone}</p>
+                        <p>{Encode(order.ShippingAddress)}</p>
+                        <p>{Encode(order.City)} / {Encode(order.PostalCode)}</p>
+                        <p><strong>Telefon:</strong> {Encode(order.CustomerPhone)}</p>
 
                         <h3>Ürünler:</h3>
                         <ul>
                             {string.Join("", order.OrderItems.Select(item =>
-                                $"<li>{item.Product?.Name ?? "Ürün"} - {item.Quantity} adet - {item.Price:F2} TL</li>"
+                                $"<li>{Encode(item.Product?.Name ?? "Ürün")} - {item.Quantity} adet - {item.Price:F2} TL</li>"
                             ))}
                         </ul>
 
@@ -65,8 +65,8 @@ namespace AutoPartsStore.API.Services
         {
             try
             {
-                var adminEmail = _configuration["Email:AdminEmail"] ?? "admin@parcamuhendisi.com";
-                var subject = $"Düşük Stok Uyarısı - {product.Name}";
+                var adminEmail = _configuration["EmailSettings:AdminEmail"] ?? string.Empty;
+                var subject = $"Düşük Stok Uyarısı - {SafeSubjectValue(product.Name)}";
                 var body = $@"
                     <html>
                     <body style='font-family: Arial, sans-serif;'>
@@ -74,8 +74,8 @@ namespace AutoPartsStore.API.Services
                         <p>Aşağıdaki ürünün stok seviyesi kritik seviyeye düştü:</p>
 
                         <h3>Ürün Bilgileri:</h3>
-                        <p><strong>Ürün Adı:</strong> {product.Name}</p>
-                        <p><strong>Parça No:</strong> {product.PartNumber}</p>
+                        <p><strong>Ürün Adı:</strong> {Encode(product.Name)}</p>
+                        <p><strong>Parça No:</strong> {Encode(product.PartNumber)}</p>
                         <p><strong>Mevcut Stok:</strong> {product.Stock} adet</p>
                         <p><strong>Eşik Değer:</strong> {threshold} adet</p>
 
@@ -96,29 +96,35 @@ namespace AutoPartsStore.API.Services
 
         private async Task SendEmail(string toEmail, string subject, string body)
         {
-            var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-            var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@parcamuhendisi.com";
-            var fromPassword = _configuration["Email:FromPassword"] ?? "";
+            var smtpHost = _configuration["EmailSettings:SmtpServer"];
+            var smtpPortValue = _configuration["EmailSettings:SmtpPort"];
+            var fromEmail = _configuration["EmailSettings:SenderEmail"];
+            var senderName = _configuration["EmailSettings:SenderName"] ?? "Parça Mühendisi";
+            var username = _configuration["EmailSettings:Username"];
+            var fromPassword = _configuration["EmailSettings:Password"];
 
             // Eğer email ayarları yapılmamışsa console'a log bas
-            if (string.IsNullOrEmpty(fromPassword))
+            if (string.IsNullOrWhiteSpace(smtpHost) ||
+                !int.TryParse(smtpPortValue, out var smtpPort) || smtpPort is < 1 or > 65535 ||
+                string.IsNullOrWhiteSpace(fromEmail) ||
+                string.IsNullOrWhiteSpace(username) ||
+                string.IsNullOrWhiteSpace(fromPassword) ||
+                !MailAddress.TryCreate(fromEmail, out _) ||
+                !MailAddress.TryCreate(toEmail, out _))
             {
                 _logger.LogWarning("Email configuration is missing. Email not sent.");
-                _logger.LogInformation("Email would be sent to: {ToEmail}", toEmail);
-                _logger.LogInformation("Subject: {Subject}", subject);
                 return;
             }
 
             using var smtpClient = new SmtpClient(smtpHost, smtpPort)
             {
                 EnableSsl = true,
-                Credentials = new NetworkCredential(fromEmail, fromPassword)
+                Credentials = new NetworkCredential(username, fromPassword)
             };
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(fromEmail, "Parça Mühendisi"),
+                From = new MailAddress(fromEmail, senderName),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = true
@@ -127,7 +133,12 @@ namespace AutoPartsStore.API.Services
             mailMessage.To.Add(toEmail);
 
             await smtpClient.SendMailAsync(mailMessage);
-            _logger.LogInformation("Email sent successfully to {ToEmail}", toEmail);
+            _logger.LogInformation("Email sent successfully.");
         }
+
+        private static string Encode(string value) => WebUtility.HtmlEncode(value);
+
+        private static string SafeSubjectValue(string value) =>
+            value.Replace('\r', ' ').Replace('\n', ' ');
     }
 }

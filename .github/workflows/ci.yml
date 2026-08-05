@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.0
+          cache: npm
+          cache-dependency-path: AutoPartsStore/Frontend/client/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: AutoPartsStore/Frontend/client
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: AutoPartsStore/Frontend/client
+        run: npm run lint
+
+      - name: Test critical frontend state and components
+        working-directory: AutoPartsStore/Frontend/client
+        run: npm test
+
+      - name: Build frontend
+        working-directory: AutoPartsStore/Frontend/client
+        run: npm run build
+
+      - name: Audit frontend dependencies
+        working-directory: AutoPartsStore/Frontend/client
+        run: npm audit --audit-level=high
+
+      - name: Scan repository for committed secrets
+        run: python scripts/scan_secrets.py
+
+      - name: Install Playwright browser
+        run: npx --yes --package @playwright/cli@0.1.17 playwright-cli install-browser chromium
+
+      - name: Start frontend for browser smoke
+        working-directory: AutoPartsStore/Frontend/client
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/parca-vite.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/parca-vite.pid"
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 0.25
+          done
+          cat "$RUNNER_TEMP/parca-vite.log"
+          exit 1
+
+      - name: Run checkout browser smoke
+        env:
+          FRONTEND_BASE_URL: http://127.0.0.1:4173
+        run: bash scripts/frontend-browser-smoke.sh
+
+      - name: Stop frontend browser-smoke server
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/parca-vite.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/parca-vite.pid")" 2>/dev/null || true
+          fi
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore local .NET tools
+        run: dotnet tool restore
+
+      - name: Restore backend
+        run: dotnet restore "parca muh.sln"
+
+      - name: Audit NuGet dependencies
+        run: dotnet list "parca muh.sln" package --vulnerable --include-transitive
+
+      - name: Build backend with warnings as errors
+        run: dotnet build "parca muh.sln" --configuration Release --no-restore -warnaserror
+
+      - name: Verify backend formatting
+        run: dotnet format "parca muh.sln" --verify-no-changes --no-restore
+
+      - name: Verify EF Core migration snapshot
+        env:
+          Jwt__Key: ci-validation-key-with-at-least-32-characters
+        run: >-
+          dotnet tool run dotnet-ef migrations has-pending-model-changes
+          --project AutoPartsStore/Backend/AutoPartsStore.API/AutoPartsStore.API.csproj
+          --startup-project AutoPartsStore/Backend/AutoPartsStore.API/AutoPartsStore.API.csproj
+
+      - name: Test backend
+        run: >-
+          dotnet test AutoPartsStore/Backend/AutoPartsStore.API.Tests/AutoPartsStore.API.Tests.csproj
+          --configuration Release --no-build
+          --collect:"XPlat Code Coverage"
+          --settings coverage.runsettings
+          --results-directory "$RUNNER_TEMP/coverage"
+
+      - name: Test real application host
+        run: >-
+          dotnet test AutoPartsStore/Backend/AutoPartsStore.API.IntegrationTests/AutoPartsStore.API.IntegrationTests.csproj
+          --configuration Release --no-build
+
+      - name: Enforce backend coverage baseline
+        run: >-
+          python scripts/check_coverage.py
+          --search-root "$RUNNER_TEMP/coverage"
+          --min-line 70
+          --min-branch 50
+
+      - name: Verify clean patch formatting
+        run: git diff --check
+
+  sqlserver-production-provider:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: test-only-SqlServer-ci-password-2026!
+        ports:
+          - 1433:1433
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Wait for SQL Server TCP listener
+        shell: bash
+        run: |
+          for attempt in {1..60}; do
+            if (echo > /dev/tcp/127.0.0.1/1433) >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "SQL Server did not start within 60 seconds." >&2
+          exit 1
+
+      - name: Restore production-provider tests
+        run: >-
+          dotnet restore
+          AutoPartsStore/Backend/AutoPartsStore.API.SqlServerTests/AutoPartsStore.API.SqlServerTests.csproj
+
+      - name: Build production-provider tests with warnings as errors
+        run: >-
+          dotnet build
+          AutoPartsStore/Backend/AutoPartsStore.API.SqlServerTests/AutoPartsStore.API.SqlServerTests.csproj
+          --configuration Release --no-restore -warnaserror
+
+      - name: Apply every migration and test concurrent checkout
+        env:
+          SQLSERVER_TEST_MASTER_CONNECTION: Server=127.0.0.1,1433;Database=master;User Id=sa;Password=test-only-SqlServer-ci-password-2026!;Encrypt=False;TrustServerCertificate=True
+        run: >-
+          dotnet test
+          AutoPartsStore/Backend/AutoPartsStore.API.SqlServerTests/AutoPartsStore.API.SqlServerTests.csproj
+          --configuration Release --no-build

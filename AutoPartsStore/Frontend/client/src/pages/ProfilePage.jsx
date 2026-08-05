@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import './ProfilePage.css';
@@ -22,18 +22,7 @@ function ProfilePage() {
     totalSpent: 0
   });
 
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.fullName || '',
-        email: user.email || '',
-        phone: user.phone || ''
-      });
-      fetchOrderStats();
-    }
-  }, [user, token]);
-
-  const fetchOrderStats = async () => {
+  const fetchOrderStats = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -56,7 +45,18 @@ function ProfilePage() {
     } catch (error) {
       console.error('Error fetching order stats:', error);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.fullName || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      });
+      fetchOrderStats();
+    }
+  }, [user, fetchOrderStats]);
 
   const handleChange = (e) => {
     setFormData({

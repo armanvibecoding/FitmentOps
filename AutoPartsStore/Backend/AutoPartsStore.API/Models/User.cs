@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace AutoPartsStore.API.Models
 {
@@ -13,6 +14,7 @@ namespace AutoPartsStore.API.Models
 
         [Required(ErrorMessage = "Şifre gereklidir.")]
         [StringLength(500, MinimumLength = 6, ErrorMessage = "Şifre en az 6 karakter olmalıdır.")]
+        [JsonIgnore]
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Ad Soyad gereklidir.")]

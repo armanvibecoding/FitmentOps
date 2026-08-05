@@ -1,10 +1,10 @@
 # AutoPartsStore - Yedek Parça E-Ticaret Platformu
 
 [![TR](https://img.shields.io/badge/lang-TR-red.svg)](#turkish) [![EN](https://img.shields.io/badge/lang-EN-blue.svg)](#english)
-[![Production Ready](https://img.shields.io/badge/Production-Ready-brightgreen.svg)]()
-[![Security](https://img.shields.io/badge/Security-Enhanced-blue.svg)]()
+[![Status](https://img.shields.io/badge/Status-Development-orange.svg)]()
+[![Security](https://img.shields.io/badge/Security-Baseline-blue.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4.svg)]()
-[![React](https://img.shields.io/badge/React-18-61DAFB.svg)]()
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)]()
 [![License](https://img.shields.io/badge/License-Educational-yellow.svg)]()
 
 ---
@@ -12,15 +12,15 @@
 <a name="turkish"></a>
 ## 🇹🇷 Türkçe
 
-Modern, kullanıcı dostu ve **production-ready** bir otomobil yedek parça e-ticaret platformu. ASP.NET Core 9.0 Web API backend ve React 18 frontend ile geliştirilmiştir.
+ASP.NET Core 9 Web API ve React 19 ile geliştirilen otomobil yedek parça e-ticaret prototipi.
 
-> **Not**: Bu proje, modern web teknolojileri kullanılarak geliştirilmiş, güvenlik önlemleri alınmış ve production ortamına hazır bir e-ticaret platformudur. Tüm modellerde validasyon, global hata yönetimi ve güvenli yapılandırma sağlanmıştır.
+> **Durum**: Proje aktif geliştirme aşamasındadır ve henüz production ortamına hazır değildir. Sunucu fiyatlı checkout, hosted-payment rezervasyon koordinasyonu, ödeme/iade durum makineleri, parçalı sevkiyat, RMA, B2B fiyat/RFQ/tedarikçi çekirdeği, pazaryeri fail-closed sınırı, kanıtlı araç uyumluluğu, Garajım/bakım günlüğü, rol ayrımlı admin ve operasyonel sağlık kontrolleri vardır. Gerçek online ödeme, kargo, e-belge ve pazaryeri adaptörleri bilerek kapalıdır; sağlayıcı hesapları, hukuki/KVKK kararları, sandbox sertifikasyonu ve gerçek SQL Server kapıları tamamlanmadan gerçek satışa açılmamalıdır.
 
 ### 🎯 Projenin Öne Çıkan Yanları
 
-- **%95 Production Ready**: Tüm kritik güvenlik önlemleri ve hata yakalamalar mevcut
+- **Güvenli geliştirme tabanı**: CI, frontend lint/build ve backend regresyon testleri
 - **Kapsamlı Validasyon**: 8 entity modelinde Data Annotations ile tam validasyon
-- **Modern Mimari**: Clean Architecture prensiplerine uygun yapı
+- **Kontrollü Ticaret Çekirdeği**: İdempotent checkout, monotonik ödeme/iade geçişleri ve append-only sağlayıcı olay kaydı
 - **Güvenli Yapılandırma**: Environment variables, JWT secret yönetimi
 - **Hata Yönetimi**: Global Exception Handler + Error Boundary
 - **API Dokümantasyonu**: RESTful API ile tutarlı endpoint yapısı
@@ -35,6 +35,12 @@ Modern, kullanıcı dostu ve **production-ready** bir otomobil yedek parça e-ti
 - **Kullanıcı Profili**: Profil bilgileri ve sipariş istatistikleri
 - **Sipariş Geçmişi**: Tüm siparişlerin detaylı görüntülenmesi
 - **Ürün İncelemeleri**: Yıldız bazlı değerlendirme ve yorum sistemi
+- **Araç Uyumluluğu**: Marka → model → nesil → motor → konfigürasyon seçimiyle yalnız doğrulanmış katalog kanıtından `Exact`/`Compatible` sonucu; kanıt yoksa güvenli `Unknown`
+- **Parça Kodu Bulma**: Doğrulanmış OEM, üretici ve interchange kodlarının normalize edilmiş araması
+- **Garajım ve Bakım Günlüğü**: Birden fazla katalog aracı, kilometre, bakım kalemleri, tarih/km hatırlatıcıları ve geçmiş parçaya tekrar erişim
+- **Sürümlü Yasal Kabul**: Yayındaki zorunlu ön bilgilendirme ve mesafeli satış metinleri yüklenmeden veya tam kabul edilmeden checkout fail-closed kalır
+- **Fitment Güveni**: Eşik altındaki kaydı olumlu göstermeyen güven puanı/bandı ve kayıtlı garaj aracıyla otomatik ürün kontrolü
+- **Kurumsal Merkez**: Bayi başvurusu, toplu RFQ, teklif görüntüleme ve kabul akışı
 - **Bildirim Sistemi**: Toast bildirimleri ile kullanıcı geri bildirimi
 - **Sayfalama**: Performanslı ürün listeleme (12 ürün/sayfa)
 - **404 Sayfası**: Özel hata sayfası
@@ -48,6 +54,16 @@ Modern, kullanıcı dostu ve **production-ready** bir otomobil yedek parça e-ti
 - **Marka Yönetimi**: Araç ve parça markalarını yönetme
 - **Stok Kontrol**: Otomatik stok takibi
 - **Email Bildirimleri**: Sipariş onayları için otomatik email
+- **Ödeme Operasyonları**: Ödeme listesi, teslimatta tahsilat, brüt/iade/net finans özeti
+- **Fulfillment Operasyonları**: Kısmi/çoklu sevkiyat, takip bilgisi ve kontrollü sevkiyat durum komutları
+- **RMA Operasyonları**: Teslim edilmiş siparişten adet kontrollü iade talebi ve inceleme yaşam döngüsü
+- **Entegrasyon Hazırlığı**: Ödeme, e-belge, SMTP, outbox, rezervasyon süpürücüsü, public origin ve kargo için credential göstermeyen fail-closed yetenek görünümü
+- **Yasal Metin Yönetimi**: SuperAdmin için değiştirilemez taslak, tek aktif sürüm, yayınlama/emekliye ayırma, optimistic concurrency ve audit intent
+- **Fitment ve Kod Yönetimi**: Araç ağacı, ürün–araç uyumu, OEM/interchange kodu, kaynak/provenance ve geçerlilik yönetimi
+- **Audit Görünümü**: Append-only SHA-256 zincirli yönetim olaylarını listeleme ve zincir bütünlüğünü doğrulama
+- **B2B ve Tedarikçi Yönetimi**: Müşteri grubu, fiyat listesi/kuralı, bayi onayı, RFQ, tedarikçi teklifi ve kaynak seçimi
+- **Pazaryeri Kontrolü**: Trendyol/Hepsiburada kanal yeteneği, listing fiyat/stok sapması ve inbox görünümü; adapter yoksa etkinleştirme engeli
+- **Garaj Operasyonu**: Destek rolü için kişisel bakım notlarını açığa çıkarmayan salt-okunur özet ve kullanıcı-ID araması
 
 #### Teknik Özellikler
 - **JWT Authentication**: Güvenli kimlik doğrulama
@@ -59,13 +75,24 @@ Modern, kullanıcı dostu ve **production-ready** bir otomobil yedek parça e-ti
 - **Global Exception Handler**: Merkezi hata yönetimi
 - **Model Validations**: Tüm modellerde Data Annotations
 - **Environment Variables**: Güvenli konfigürasyon yönetimi
+- **Hosted ödeme sınırı**: Kart/PAN/CVV modeli yok; yapılandırılmamış online ödeme fail-closed çalışır
+- **Dayanıklı işlem temeli**: PaymentAttempt, PaymentTransaction, Refund, PaymentEvent ve bounded outbox
+- **Satış sonrası çekirdeği**: Shipment/ShipmentItem ve ReturnRequest/ReturnItem modelleri; idempotency, concurrency ve quantity sınırları
+- **Türkiye e-belge sınırı**: Sağlayıcıdan bağımsız immutable tutar/vergi snapshot sözleşmeleri; yapılandırılmadığında sahte başarı üretmeyen gateway
+- **Fitment veri güvenliği**: Provider bağımsız araç ağacı, doğrulanmış kaynak zorunluluğu, benzersiz natural key/source kayıtları ve tarihsel geçerlilik
+- **Yetki ayrımı**: Finance, Warehouse, Catalog, Support ve SuperAdmin endpoint politikaları; mevcut `Admin` rolü için geçiş uyumluluğu
+- **Audit ve gözlemlenebilirlik**: Ham istek/payload saklamayan hash zinciri, güvenli correlation middleware’i, `/health/live` ve `/health/ready`
+- **Stok rezervasyonu**: Hosted checkout’a bağlı serializable reserve/release/expire/commit, son stok ve geçiş yarış testleri
+- **SEO temeli**: Ürün canonical/JSON-LD, HTTPS origin kontrollü sitemap indexi, 50 bin URL’lik ürün sitemap bölme ve fail-closed robots
+- **Web güvenliği**: Exact-origin CORS doğrulaması, HSTS ve production güvenlik başlıkları; wildcard veya credential içeren origin kabul edilmez
+- **Kabul kanıtı**: Siparişle aynı transaction’da belge türü/sürümü/SHA-256 snapshot’ı; ham idempotency anahtarı, IP veya user-agent saklanmaz
 
 ### 🏗️ Teknoloji ve Mimari Kararlar
 
 #### Backend Mimarisi
 - **Entity Framework Core**: Code-First yaklaşımı ile veritabanı yönetimi
-- **Repository Pattern**: Veri erişim katmanı soyutlaması
-- **DTO Pattern**: Veri transfer nesneleri ile katman izolasyonu
+- **Controller + Service sınırları**: Kritik checkout, sipariş, ödeme, iade ve outbox davranışı servislerde
+- **DTO Pattern**: Admin ve dış API yanıtlarında kontrollü veri transfer nesneleri
 - **Dependency Injection**: .NET Core built-in DI container
 - **Middleware Pipeline**: Global hata yakalama ve authentication
 
@@ -78,10 +105,12 @@ Modern, kullanıcı dostu ve **production-ready** bir otomobil yedek parça e-ti
 
 #### Güvenlik Stratejisi
 - **BCrypt**: Password hashing (cost factor: 10)
-- **JWT**: Stateless authentication (24 saat expiration)
+- **JWT**: Stateless authentication (24 saat geçerlilik)
 - **Data Annotations**: Model seviyesinde input validasyonu
 - **Environment Variables**: Hassas bilgilerin güvenli saklanması
 - **CORS Policy**: Origin kontrolü
+- **Rate limiting**: Kimlik doğrulama ve misafir sipariş takibi için IP bazlı sınır
+- **Gizli veri koruması**: Varsayılan admin parolası yok; provider token/kimlik/idempotency alanları genel JSON dışında
 
 ### 🛠 Teknoloji Yığını
 
@@ -95,8 +124,8 @@ Modern, kullanıcı dostu ve **production-ready** bir otomobil yedek parça e-ti
 - MailKit (Email servisi)
 
 #### Frontend
-- React 18
-- React Router v6
+- React 19
+- React Router v8.3 (patched non-RSC imports from `react-router`)
 - Axios
 - Context API (Auth, Cart, Wishlist, Notification)
 - CSS3 (Custom styling)
@@ -105,7 +134,7 @@ Modern, kullanıcı dostu ve **production-ready** bir otomobil yedek parça e-ti
 
 #### Gereksinimler
 - .NET 9.0 SDK
-- Node.js (v18 veya üzeri)
+- Node.js 22.22 veya üzeri
 - SQL Server veya SQL Server LocalDB
 - Git
 
@@ -127,12 +156,24 @@ cd AutoPartsStore/Backend/AutoPartsStore.API
 }
 ```
 
-3. **ÖNEMLI**: JWT Secret Key'i ayarlayın:
-`appsettings.Development.json` dosyasında JWT Key'i bulunur (geliştirme için).
-Production için environment variable kullanın:
+3. **ÖNEMLİ**: JWT Secret Key'i ayarlayın:
+JWT anahtarı repoya yazılmaz. Geliştirme ve production için en az 32 karakterlik environment variable kullanın:
 ```bash
-export JWT__KEY="YourProductionSecretKey32CharactersLong!"
+export Jwt__Key="replace-with-a-random-secret-at-least-32-characters"
 ```
+
+PowerShell:
+```powershell
+$env:Jwt__Key="replace-with-a-random-secret-at-least-32-characters"
+```
+
+Production originlerini de ortamdan verin; varsayılan public site origin’i boştur ve bu durumda sitemap `503`, robots ise `Disallow: /` döner:
+```powershell
+$env:Cors__AllowedOrigins__0="https://shop.example.com"
+$env:PublicSite__BaseUrl="https://shop.example.com"
+```
+
+Checkout varsayılan olarak `PreliminaryInformation` ve `DistanceSalesAgreement` türlerinde iki yayınlanmış belge ister. Migration sonrasında SuperAdmin, **Yasal metinler** sekmesinde hukuk tarafından onaylanan her metni ayrı bir sürüm olarak oluşturup yayınlamalıdır. Metinlerden biri yoksa `GET /api/legal/checkout-documents` ve yeni checkout girişimleri `503` ile fail-closed kalır. Mevcut yayınlanmış içerik düzenlenmez; değişiklik yeni sürümle yapılır.
 
 4. Veritabanını oluşturun:
 ```bash
@@ -159,9 +200,9 @@ cd ../../Frontend/client
 VITE_API_BASE_URL=http://localhost:5167/api
 ```
 
-3. Bağımlılıkları yükleyin:
+3. Kilitli bağımlılıkları yükleyin:
 ```bash
-npm install
+npm ci
 ```
 
 4. Geliştirme sunucusunu başlatın:
@@ -170,6 +211,28 @@ npm run dev
 ```
 
 Frontend uygulaması `http://localhost:5173` adresinde çalışacaktır.
+
+#### Doğrulama
+
+```bash
+dotnet tool restore
+dotnet restore "parca muh.sln"
+dotnet build "parca muh.sln" --configuration Release --no-restore -warnaserror
+dotnet format "parca muh.sln" --verify-no-changes --no-restore
+dotnet tool run dotnet-ef migrations has-pending-model-changes --project AutoPartsStore/Backend/AutoPartsStore.API
+dotnet test AutoPartsStore/Backend/AutoPartsStore.API.Tests/AutoPartsStore.API.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --settings coverage.runsettings --results-directory TestResults
+python scripts/check_coverage.py --search-root TestResults --min-line 70 --min-branch 50
+dotnet test AutoPartsStore/Backend/AutoPartsStore.API.IntegrationTests/AutoPartsStore.API.IntegrationTests.csproj --configuration Release --no-build
+cd AutoPartsStore/Frontend/client
+npm run lint
+npm test
+npm run build
+npm audit --audit-level=high
+```
+
+Bu kontroller GitHub Actions üzerinde her push ve pull request için çalışır. CI ayrıca SQL Server 2022 üzerinde tüm migration'ları sıfırdan uygulayıp eşzamanlı checkout yarışını, gerçek ASP.NET hostunda auth/RBAC/CORS/header/rate-limit/hata sızıntısı davranışını ve gerçek Chromium oturumunda araç uyumluluğu, mobil taşma, anonim admin yönlendirmesi ve sürümlü yasal kabul içeren checkout/makbuz akışını doğrular. CodeQL `security-extended` ayrı bir iş akışıdır. Yetkili staging hedefi için manuel `Staging assurance` işi; canlı readiness ve entegrasyon sertifikasyonu, k6 eşikleri, ZAP storefront ve OpenAPI taramasını fail-closed çalıştırır.
+
+Staging OpenAPI belgesi varsayılan olarak kapalıdır. Yalnız DAST uygulanan yetkili staging ortamında `OpenApi__Enabled=true` verilmelidir; Swagger UI development dışına açılmaz.
 
 ### 📊 Veritabanı Yapısı
 
@@ -181,6 +244,21 @@ Frontend uygulaması `http://localhost:5173` adresinde çalışacaktır.
 - **PartBrands**: Parça markaları (Name, Slug, LogoUrl)
 - **Orders**: Sipariş bilgileri (OrderNumber, TotalAmount, Status)
 - **OrderItems**: Sipariş detayları (Quantity, Price)
+- **Payments**: Sağlayıcı, yöntem, tutar ve ödeme yaşam döngüsü
+- **PaymentAttempts / PaymentTransactions**: Hosted checkout denemeleri ve sağlayıcı finans hareketleri
+- **PaymentEvents**: Ham payload saklamadan hash tabanlı, idempotent sağlayıcı olay kaydı
+- **Refunds**: Eşzamanlı fazla iadeyi engelleyen tam/kısmi iade durumu
+- **OutboxMessages**: Lease, bounded batch ve üst sınırlı retry ile dayanıklı entegrasyon kuyruğu
+- **Shipments / ShipmentItems**: Parçalı sevkiyat, benzersiz kargo/takip ve satır bazlı adet
+- **ReturnRequests / ReturnItems**: RMA durum makinesi, neden kodu, miktar kapasitesi ve doğrulanmış refund referansı
+- **VehicleMakes / VehicleModels / VehicleGenerations / VehicleEngines / Vehicles**: Provider bağımsız araç ağacı
+- **ProductFitments / ProductIdentifiers**: Kaynak kanıtlı ürün–araç uyumu ve normalize OEM/interchange kodları
+- **InventoryReservations / InventoryReservationItems**: Süreli, idempotent ve yarış güvenli stok ayırma temeli
+- **AdminAuditEvents**: Metadata-only, zincir bütünlüklü admin olayları
+- **DealerApplications / CustomerGroups / PriceLists / PriceRules / BulkQuoteRequests**: B2B müşteri ve fiyat/teklif akışları
+- **Suppliers / SupplierOffers**: Çok tedarikçili teklif ve deterministik kaynak seçimi
+- **SalesChannels / ChannelListings / ChannelOrderLinks / ChannelInboxEvents**: Pazaryeri yetenek, listing ve idempotent sipariş temeli
+- **UserVehicles / MaintenanceRecords / MaintenanceRecordItems / MaintenanceReminders**: Garaj, kilometre, servis günlüğü ve hatırlatıcılar; plaka/VIN tutulmaz
 - **Reviews**: Ürün değerlendirmeleri (Rating 1-5, Comment)
 
 **Tüm modeller Data Annotations ile validate edilir!**
@@ -202,8 +280,30 @@ Frontend uygulaması `http://localhost:5173` adresinde çalışacaktır.
 
 #### Orders
 - `GET /api/Orders` - Kullanıcının siparişleri
-- `POST /api/Orders` - Yeni sipariş oluştur
+- `POST /api/Orders` - `Idempotency-Key` başlığıyla atomik sipariş oluştur
 - `GET /api/Orders/{id}` - Sipariş detayı
+- `POST /api/Orders/track` - Sipariş numarası ve e-posta ile PII içermeyen misafir takibi
+
+#### Payments
+- `GET /api/Payments/capabilities` - Aktif ödeme yöntemlerini bildirir; gerçek gateway yapılandırılana kadar online kart `false`
+
+#### Fitment
+- `GET /api/Fitment/vehicles/{makes|models|generations|engines|configurations}` - Kademeli araç seçimi
+- `GET /api/Fitment/check?productId=&vehicleId=` - Doğrulanmış ürün–araç uyumluluk sonucu
+- `GET /api/Fitment/products/{productId}` - Ürünün doğrulanmış araç kayıtları
+
+#### Garage and maintenance
+- `GET|POST /api/Garage` - Kullanıcının araçları / idempotent araç ekleme
+- `PUT /api/Garage/{id}` - Optimistic concurrency ile araç/km güncelleme
+- `GET|POST /api/Garage/{id}/maintenance` - Bakım geçmişi ve idempotent kayıt
+- `GET|POST /api/Garage/{id}/reminders` - Tarih/km hedefli hesap içi hatırlatıcı
+- `POST /api/Garage/reminders/{id}/complete` - Hatırlatıcıyı tamamla
+
+#### SEO
+- `GET /sitemap.xml` - Sitemap index
+- `GET /sitemaps/static.xml` ve `/sitemaps/products-{page}.xml` - Bölünmüş sitemap’ler
+- `GET /robots.txt` - Public site origin’i yoksa güvenli `Disallow: /`
+- `GET /api/Fitment/identifiers/{value}` - Normalize edilmiş ve doğrulanmış parça kodu araması
 
 #### Reviews
 - `GET /api/Reviews/product/{productId}` - Ürün incelemeleri
@@ -211,26 +311,34 @@ Frontend uygulaması `http://localhost:5173` adresinde çalışacaktır.
 - `PUT /api/Reviews/{id}` - Yorum güncelle
 - `DELETE /api/Reviews/{id}` - Yorum sil
 
-#### Admin (Requires Admin Role)
+#### Admin (Policy-gated)
 - `GET /api/Admin/stats` - Dashboard istatistikleri
 - `GET /api/Admin/products` - Tüm ürünler (admin)
 - `POST /api/Admin/products` - Ürün ekle
 - `PUT /api/Admin/products/{id}` - Ürün güncelle
 - `DELETE /api/Admin/products/{id}` - Ürün sil
 - `GET /api/Admin/orders` - Tüm siparişler
-- `PUT /api/Admin/orders/{id}` - Sipariş durumu güncelle
+- `PUT /api/Admin/orders/{id}/status` - Geçerli durum geçişleriyle siparişi güncelle
+- `GET /api/Admin/payments` - Ödeme kayıtlarını listele
+- `POST /api/Admin/payments/{id}/mark-paid` - Teslimatta ödemeyi tahsil edildi işaretle
+- `GET /api/Admin/shipments` - Sevkiyatları ve kalemlerini listele
+- `POST /api/Admin/orders/{id}/shipments` - `Idempotency-Key` ile kısmi/çoklu sevkiyat oluştur
+- `POST /api/Admin/shipments/{id}/{command}` - Etiket, hazır, sevk, teslim, hata ve iptal komutları
+- `GET /api/Admin/returns` - RMA/iade taleplerini listele
+- `POST /api/Admin/orders/{id}/returns` - `Idempotency-Key` ve neden kodlarıyla iade talebi oluştur
+- `POST /api/Admin/returns/{id}/{command}` - Onay, ret, teslim alma, inceleme, iptal ve kapama komutları
+- `GET /api/Admin/integrations/capabilities` - Secret göstermeden ödeme ve e-belge hazır olma durumunu bildir
+- `POST /api/Admin/fitment/vehicles` - Araç ağacı upsert
+- `POST /api/Admin/fitment/links` - Kaynak kanıtlı ürün–araç uyumu upsert
+- `POST /api/Admin/fitment/identifiers` - OEM/interchange kodu upsert
+- `GET /api/Admin/audit` - Bounded audit metadata sayfası
+- `GET /api/Admin/audit/verify` - Audit zincir bütünlüğünü doğrula
 
-### 👤 Varsayılan Kullanıcılar
+Admin API’si `RefundPending` veya `Refunded` durumlarını genel bir komutla vermez. Bu durumlar yalnız gerçek ödeme iadesinin doğrulanmış harici referanslarıyla ilerletilmek üzere servis sınırında tutulur.
 
-Sistem ilk çalıştırıldığında otomatik olarak oluşturulur:
+### 👤 İlk Yönetici
 
-#### Admin
-- Email: `admin@autoparts.com`
-- Şifre: `Admin123!`
-
-#### Test Kullanıcısı
-- Email: `test@test.com`
-- Şifre: `Test123!`
+Repo varsayılan yönetici veya test parolası oluşturmaz. İlk yönetici production ortamında kontrollü bir bootstrap/secret süreciyle oluşturulmalıdır.
 
 ### 📧 Email Yapılandırması
 
@@ -349,7 +457,7 @@ npm run preview
 - ✅ Global Exception Handler
 - ✅ Environment variables ile güvenli konfigürasyon
 - ✅ AllowedHosts kısıtlaması
-- ✅ Console logging temizlendi (production-safe)
+- ⚠️ Genel frontend console temizliği yapıldı; provider exception ve PII redaction politikası tamamlanmadan backend logları production-safe sayılmaz
 
 ### ⚡ Performans Optimizasyonları
 
@@ -453,14 +561,14 @@ Proje Link: [https://github.com/mustafaatakli/ParcaMuhendisi-AutoPartsSystem](ht
 - [ ] Sahte Yorum Tespiti
 - [ ] Ürün karşılaştırma
 - [ ] Gelişmiş filtreleme seçenekleri
-- [ ] PDF fatura oluşturma
+- [ ] UBL-TR elektronik asıl, doğrulama/görüntüleme bileşeni ve izin verilen müşteri görünümüyle e-Fatura/e-Arşiv arşivi
 - [ ] Çoklu dil desteği
 - [ ] Kampanya ve kupon sistemi
 - [ ] SMS bildirimleri
 - [ ] Sosyal medya entegrasyonu
 - [ ] HttpOnly cookie için token storage
 - [ ] Password complexity artırma
-- [ ] Rate limiting
+- [ ] Checkout, provider webhook ve kullanıcı yazma uçlarında dağıtık rate-limit store’u (yerel fixed-window politikaları tamamlandı)
 
 ### 🙏 Teşekkürler
 
@@ -474,15 +582,15 @@ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın! ⭐
 <a name="english"></a>
 ## 🇬🇧 English
 
-A modern, user-friendly and **production-ready** automotive spare parts e-commerce platform. Built with ASP.NET Core 9.0 Web API backend and React 18 frontend.
+A development-stage automotive spare parts e-commerce platform built with an ASP.NET Core 9.0 Web API backend and React 19 frontend.
 
-> **Note**: This project is built using modern web technologies with security measures implemented and ready for production deployment. All models include validation, global error handling, and secure configuration.
+> **Status**: The project is not production-ready yet. Server-priced checkout, hosted-payment reservation coordination, payment/refund state machines, partial shipment/RMA, B2B pricing/RFQ/supplier foundations, fail-closed marketplace boundaries, verified fitment and garage/maintenance flows are implemented. Real payment, carrier, electronic-invoice and marketplace adapters intentionally remain disabled until credentials, legal/KVKK decisions, sandbox certification and real SQL Server gates are complete.
 
 ### 🎯 Project Highlights
 
-- **95% Production Ready**: All critical security measures and error handling implemented
+- **Secure Development Baseline**: Mandatory external JWT secret, protected order lookup and rate-limited guest tracking
 - **Comprehensive Validation**: Full validation with Data Annotations on 8 entity models
-- **Modern Architecture**: Structure following Clean Architecture principles
+- **Controlled Commerce Core**: Idempotent checkout, monotonic payment/refund transitions and append-only provider event records
 - **Secure Configuration**: Environment variables, JWT secret management
 - **Error Handling**: Global Exception Handler + Error Boundary
 - **API Documentation**: Consistent endpoint structure with RESTful API
@@ -497,6 +605,9 @@ A modern, user-friendly and **production-ready** automotive spare parts e-commer
 - **User Profile**: Profile information and order statistics
 - **Order History**: Detailed view of all orders
 - **Product Reviews**: Star-based rating and comment system
+- **Garage and Maintenance Journal**: Multiple catalog vehicles, odometer, service history, date/km reminders and links back to previously used parts
+- **Verified Fitment Confidence**: Thresholded confidence bands and automatic product checks for the selected garage vehicle
+- **B2B Center**: Dealer application, bulk RFQ, quote review and acceptance
 - **Notification System**: User feedback with toast notifications
 - **Pagination**: Efficient product listing (12 products/page)
 - **404 Page**: Custom error page
@@ -510,6 +621,12 @@ A modern, user-friendly and **production-ready** automotive spare parts e-commer
 - **Brand Management**: Manage vehicle and part brands
 - **Stock Control**: Automatic inventory tracking
 - **Email Notifications**: Automatic emails for order confirmations
+- **Payment Operations**: Payment list, manual collection and gross/refund/net finance summary
+- **Fulfillment Operations**: Partial/multiple shipments, tracking data and explicit shipment commands
+- **RMA Operations**: Quantity-bounded return requests and inspection lifecycle for delivered orders
+- **Integration Readiness**: Fail-closed payment and Turkish electronic-invoice capability status
+- **B2B, Supplier and Channel Operations**: Price groups/rules, RFQ, supplier sourcing and marketplace drift/inbox status
+- **Garage Support View**: Read-only operational metadata without exposing email, phone, VIN, plate or private maintenance notes
 
 #### Technical Features
 - **JWT Authentication**: Secure authentication
@@ -521,13 +638,19 @@ A modern, user-friendly and **production-ready** automotive spare parts e-commer
 - **Global Exception Handler**: Centralized error handling
 - **Model Validations**: Data Annotations on all models
 - **Environment Variables**: Secure configuration management
+- **Hosted-payment boundary**: No card/PAN/CVV model; an unconfigured online gateway fails closed
+- **Durable processing foundation**: PaymentAttempt, PaymentTransaction, Refund, PaymentEvent and bounded outbox
+- **After-sales core**: Shipment/ShipmentItem and ReturnRequest/ReturnItem with idempotency, concurrency and quantity bounds
+- **Turkish e-document boundary**: Provider-neutral immutable amount/tax snapshots and a disabled gateway that never fabricates success
+- **Garage persistence**: Ownership-scoped, idempotent and concurrency-safe maintenance/reminder records without plate or VIN storage
+- **SEO and web security**: Product JSON-LD/canonical metadata, paged sitemaps, fail-closed robots, validated exact-origin CORS, HSTS and production security headers
 
 ### 🏗️ Technology and Architecture Decisions
 
 #### Backend Architecture
 - **Entity Framework Core**: Database management with Code-First approach
-- **Repository Pattern**: Data access layer abstraction
-- **DTO Pattern**: Layer isolation with data transfer objects
+- **Controller + service boundaries**: Critical checkout, order, payment, refund and outbox behavior lives in services
+- **DTO Pattern**: Controlled admin and external API response models
 - **Dependency Injection**: .NET Core built-in DI container
 - **Middleware Pipeline**: Global error catching and authentication
 
@@ -540,10 +663,12 @@ A modern, user-friendly and **production-ready** automotive spare parts e-commer
 
 #### Security Strategy
 - **BCrypt**: Password hashing (cost factor: 10)
-- **JWT**: Stateless authentication (24 hour expiration)
+- **JWT**: Stateless authentication (24-hour expiration)
 - **Data Annotations**: Model-level input validation
 - **Environment Variables**: Secure storage of sensitive information
 - **CORS Policy**: Origin control
+- **Rate limiting**: IP-based limits for authentication and guest order tracking
+- **Secret/PII protection**: No default admin password; provider tokens, identity and idempotency fields are excluded from general JSON
 
 ### 🛠 Technology Stack
 
@@ -557,8 +682,8 @@ A modern, user-friendly and **production-ready** automotive spare parts e-commer
 - MailKit (Email service)
 
 #### Frontend
-- React 18
-- React Router v6
+- React 19
+- React Router v8.3
 - Axios
 - Context API (Auth, Cart, Wishlist, Notification)
 - CSS3 (Custom styling)
@@ -567,7 +692,7 @@ A modern, user-friendly and **production-ready** automotive spare parts e-commer
 
 #### Requirements
 - .NET 9.0 SDK
-- Node.js (v18 or higher)
+- Node.js (v20 or higher; CI uses Node.js 22)
 - SQL Server or SQL Server LocalDB
 - Git
 
@@ -589,11 +714,10 @@ Update the SQL Server connection string in `appsettings.json`:
 }
 ```
 
-3. **IMPORTANT**: Set JWT Secret Key:
-JWT Key is in `appsettings.Development.json` (for development).
-For production use environment variable:
+3. **IMPORTANT**: Set the JWT secret key:
+The key is not stored in the repository. Use an environment variable with at least 32 characters in development and production:
 ```bash
-export JWT__KEY="YourProductionSecretKey32CharactersLong!"
+export Jwt__Key="replace-with-a-random-secret-of-at-least-32-characters"
 ```
 
 4. Create the database:
@@ -621,9 +745,9 @@ cd ../../Frontend/client
 VITE_API_BASE_URL=http://localhost:5167/api
 ```
 
-3. Install dependencies:
+3. Install the locked dependencies:
 ```bash
-npm install
+npm ci
 ```
 
 4. Start the development server:
@@ -643,6 +767,11 @@ The frontend application will run at `http://localhost:5173`.
 - **PartBrands**: Part brands (Name, Slug, LogoUrl)
 - **Orders**: Order information (OrderNumber, TotalAmount, Status)
 - **OrderItems**: Order details (Quantity, Price)
+- **Payments**: Provider, method, amount and payment lifecycle
+- **PaymentAttempts / PaymentTransactions**: Hosted checkout attempts and provider financial movements
+- **PaymentEvents**: Hash-based idempotent provider events without raw payload storage
+- **Refunds**: Full/partial refund state with concurrent over-refund protection
+- **OutboxMessages**: Durable integration queue with leases, bounded batches and capped retries
 - **Reviews**: Product reviews (Rating 1-5, Comment)
 
 **All models are validated with Data Annotations!**
@@ -664,8 +793,12 @@ The frontend application will run at `http://localhost:5173`.
 
 #### Orders
 - `GET /api/Orders` - User's orders
-- `POST /api/Orders` - Create new order
+- `POST /api/Orders` - Create an atomic order with an `Idempotency-Key` header
 - `GET /api/Orders/{id}` - Order details
+- `POST /api/Orders/track` - PII-minimized guest tracking with order number and email
+
+#### Payments
+- `GET /api/Payments/capabilities` - Reports enabled payment methods; online card remains `false` until a real gateway is configured
 
 #### Reviews
 - `GET /api/Reviews/product/{productId}` - Product reviews
@@ -673,26 +806,29 @@ The frontend application will run at `http://localhost:5173`.
 - `PUT /api/Reviews/{id}` - Update review
 - `DELETE /api/Reviews/{id}` - Delete review
 
-#### Admin (Requires Admin Role)
+#### Admin (Policy-gated)
 - `GET /api/Admin/stats` - Dashboard statistics
 - `GET /api/Admin/products` - All products (admin)
 - `POST /api/Admin/products` - Add product
 - `PUT /api/Admin/products/{id}` - Update product
 - `DELETE /api/Admin/products/{id}` - Delete product
 - `GET /api/Admin/orders` - All orders
-- `PUT /api/Admin/orders/{id}` - Update order status
+- `PUT /api/Admin/orders/{id}/status` - Update an order through valid transitions
+- `GET /api/Admin/payments` - List payment records
+- `POST /api/Admin/payments/{id}/mark-paid` - Mark pay-at-delivery collection as paid
+- `GET /api/Admin/shipments` - List shipments and their lines
+- `POST /api/Admin/orders/{id}/shipments` - Create a partial/multiple shipment with `Idempotency-Key`
+- `POST /api/Admin/shipments/{id}/{command}` - Explicit label, ready, ship, deliver, fail and cancel commands
+- `GET /api/Admin/returns` - List RMA/return requests
+- `POST /api/Admin/orders/{id}/returns` - Create a return request with `Idempotency-Key` and reason codes
+- `POST /api/Admin/returns/{id}/{command}` - Explicit approve, reject, receive, inspect, cancel and close commands
+- `GET /api/Admin/integrations/capabilities` - Report payment and e-document readiness without exposing secrets
 
-### 👤 Default Users
+The admin API does not provide a generic command for `RefundPending` or `Refunded`. Those states remain behind the service boundary for verified external refund references only.
 
-Automatically created on first run:
+### 👤 Initial Administrator
 
-#### Admin
-- Email: `admin@autoparts.com`
-- Password: `Admin123!`
-
-#### Test User
-- Email: `test@test.com`
-- Password: `Test123!`
+The repository does not create a default administrator or test password. Provision the first administrator through a controlled production bootstrap/secret process.
 
 ### 📧 Email Configuration
 
@@ -811,7 +947,7 @@ npm run preview
 - ✅ Global Exception Handler
 - ✅ Secure configuration with environment variables
 - ✅ AllowedHosts restriction
-- ✅ Console logging cleaned (production-safe)
+- ⚠️ General frontend console cleanup is complete; backend logs are not considered production-safe until provider exception and PII redaction policy is enforced
 
 ### ⚡ Performance Optimizations
 
@@ -915,14 +1051,14 @@ Project Link: [https://github.com/mustafaatakli/ParcaMuhendisi-AutoPartsSystem](
 - [ ] Fake Review Detection
 - [ ] Product comparison
 - [ ] Advanced filtering options
-- [ ] PDF invoice generation
+- [ ] e-Invoice/e-Archive storage for the signed UBL-TR original plus validation/rendering components and an allowed customer view
 - [ ] Multi-language support
 - [ ] Campaign and coupon system
 - [ ] SMS notifications
 - [ ] Social media integration
 - [ ] HttpOnly cookie for token storage
 - [ ] Enhanced password complexity
-- [ ] Rate limiting
+- [ ] Distributed rate-limit storage for checkout, provider webhooks and user writes (local fixed-window policies are implemented)
 
 ### 🙏 Acknowledgments
 

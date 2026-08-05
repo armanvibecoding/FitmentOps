@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
@@ -24,6 +24,8 @@ import ContactPage from './pages/ContactPage';
 import CareerPage from './pages/CareerPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import ReturnsPage from './pages/ReturnsPage';
+import B2bPage from './pages/B2bPage';
+import GaragePage from './pages/GaragePage';
 import FAQPage from './pages/FAQPage';
 import SearchPage from './pages/SearchPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -61,6 +63,8 @@ function App() {
                 <Route path="/kariyer" element={<CareerPage />} />
                 <Route path="/siparis-takibi" element={<OrderTrackingPage />} />
                 <Route path="/iade-degisim" element={<ReturnsPage />} />
+                <Route path="/kurumsal" element={<B2bPage />} />
+                <Route path="/garajim" element={<GaragePage />} />
                 <Route path="/sss" element={<FAQPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>            </main>

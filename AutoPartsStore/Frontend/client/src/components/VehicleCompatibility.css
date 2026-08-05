@@ -1,0 +1,138 @@
+.fitment-checker {
+  margin: 1.25rem 0;
+  padding: 1.1rem;
+  border: 1px solid #dbe3ea;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.fitment-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.fitment-heading h3,
+.fitment-heading p {
+  margin: 0;
+}
+
+.saved-fitment-vehicle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: .9rem 0;
+  padding: .75rem .9rem;
+  border: 1px solid #bbd9c5;
+  border-radius: 8px;
+  background: #eff8f2;
+}
+
+.saved-fitment-vehicle a {
+  color: #17613c;
+  font-weight: 700;
+}
+
+.fitment-heading p {
+  margin-top: 0.35rem;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.verified-data-label {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.fitment-select-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.fitment-select-grid select,
+.fitment-select-grid button {
+  min-height: 42px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+}
+
+.fitment-select-grid button {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fitment-select-grid button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.fitment-message,
+.fitment-result {
+  margin: 0.85rem 0 0;
+  padding: 0.75rem;
+  border-radius: 6px;
+}
+
+.fitment-result small,
+.known-fitments li small {
+  display: block;
+  margin-top: 0.35rem;
+  color: #475569;
+}
+
+.fitment-message.error,
+.fitment-result.unknown {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.fitment-result.exact,
+.fitment-result.compatible {
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.fitment-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.known-fitments {
+  margin-top: 0.9rem;
+}
+
+.known-fitments ul {
+  margin: 0.65rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.fitment-disclaimer {
+  margin: 0.9rem 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .fitment-select-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fitment-heading {
+    flex-direction: column;
+  }
+}

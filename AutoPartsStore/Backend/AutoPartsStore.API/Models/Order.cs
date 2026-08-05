@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace AutoPartsStore.API.Models
 {
@@ -9,6 +10,10 @@ namespace AutoPartsStore.API.Models
         [Required(ErrorMessage = "Sipariş numarası gereklidir.")]
         [StringLength(50, ErrorMessage = "Sipariş numarası en fazla 50 karakter olabilir.")]
         public string OrderNumber { get; set; } = string.Empty;
+
+        [StringLength(100)]
+        [JsonIgnore]
+        public string? CheckoutIdempotencyKey { get; set; }
 
         public int? UserId { get; set; }
         public User? User { get; set; }
@@ -50,6 +55,10 @@ namespace AutoPartsStore.API.Models
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public Payment? Payment { get; set; }
+
+        [JsonIgnore]
+        public ICollection<LegalAcceptance> LegalAcceptances { get; set; } = new List<LegalAcceptance>();
     }
 
     public class OrderItem

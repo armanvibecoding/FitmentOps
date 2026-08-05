@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using AutoPartsStore.API.Models;
 using System.Text.Json;
 
@@ -10,24 +11,66 @@ namespace AutoPartsStore.API.Data
         {
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.ConfigureWarnings(warnings =>
-                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-        }
-
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Brand> Brands { get; set; } // Vehicle Brands (Araç Markaları)
         public DbSet<PartBrand> PartBrands { get; set; } // Part Brands (Parça Markaları)
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<PaymentEvent> PaymentEvents { get; set; }
+        public DbSet<PaymentAttempt> PaymentAttempts { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+        public DbSet<Refund> Refunds { get; set; }
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
+        public DbSet<Shipment> Shipments { get; set; }
+        public DbSet<ShipmentItem> ShipmentItems { get; set; }
+        public DbSet<ReturnRequest> ReturnRequests { get; set; }
+        public DbSet<ReturnItem> ReturnItems { get; set; }
+        public DbSet<InventoryReservation> InventoryReservations { get; set; }
+        public DbSet<InventoryReservationItem> InventoryReservationItems { get; set; }
+        public DbSet<HostedCheckoutSession> HostedCheckoutSessions { get; set; }
+        public DbSet<AdminAuditEvent> AdminAuditEvents { get; set; }
+        public DbSet<AdminAuditIntent> AdminAuditIntents { get; set; }
+        public DbSet<VehicleMake> VehicleMakes { get; set; }
+        public DbSet<VehicleModel> VehicleModels { get; set; }
+        public DbSet<VehicleGeneration> VehicleGenerations { get; set; }
+        public DbSet<VehicleEngine> VehicleEngines { get; set; }
+        public DbSet<Vehicle> Vehicles { get; set; }
+        public DbSet<ProductFitment> ProductFitments { get; set; }
+        public DbSet<ProductIdentifier> ProductIdentifiers { get; set; }
+        public DbSet<Supplier> Suppliers { get; set; }
+        public DbSet<SupplierOffer> SupplierOffers { get; set; }
+        public DbSet<DealerApplication> DealerApplications { get; set; }
+        public DbSet<CustomerGroup> CustomerGroups { get; set; }
+        public DbSet<PriceList> PriceLists { get; set; }
+        public DbSet<PriceRule> PriceRules { get; set; }
+        public DbSet<BulkQuoteRequest> BulkQuoteRequests { get; set; }
+        public DbSet<BulkQuoteLine> BulkQuoteLines { get; set; }
+        public DbSet<SalesChannel> SalesChannels { get; set; }
+        public DbSet<ChannelListing> ChannelListings { get; set; }
+        public DbSet<ChannelOrderLink> ChannelOrderLinks { get; set; }
+        public DbSet<ChannelInboxEvent> ChannelInboxEvents { get; set; }
+        public DbSet<UserVehicle> UserVehicles { get; set; }
+        public DbSet<MaintenanceRecord> MaintenanceRecords { get; set; }
+        public DbSet<MaintenanceRecordItem> MaintenanceRecordItems { get; set; }
+        public DbSet<MaintenanceReminder> MaintenanceReminders { get; set; }
+        public DbSet<LegalDocumentVersion> LegalDocumentVersions { get; set; }
+        public DbSet<LegalAcceptance> LegalAcceptances { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Review> Reviews { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.ConfigureFitmentModel();
+            modelBuilder.ConfigureHostedCheckout();
+            modelBuilder.ConfigureSupplierSourcing();
+            modelBuilder.ConfigureB2bPricing();
+            modelBuilder.ConfigureBulkQuotes();
+            modelBuilder.ConfigureSalesChannels();
+            modelBuilder.ConfigureMaintenance();
+            modelBuilder.ConfigureLegalDocuments();
 
             // Category configuration
             modelBuilder.Entity<Category>()
@@ -45,24 +88,370 @@ namespace AutoPartsStore.API.Data
                 .Property(p => p.OldPrice)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Product>()
+            var additionalImagesProperty = modelBuilder.Entity<Product>()
                 .Property(p => p.AdditionalImages)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null!),
                     v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null!) ?? new List<string>()
                 );
 
+            additionalImagesProperty.Metadata.SetValueComparer(
+                new ValueComparer<List<string>>(
+                    (left, right) => left != null && right != null && left.SequenceEqual(right),
+                    values => values.Aggregate(0, (hash, value) => HashCode.Combine(hash, value.GetHashCode())),
+                    values => values.ToList()));
+
             // Order configuration
             modelBuilder.Entity<Order>()
                 .Property(o => o.TotalAmount)
                 .HasPrecision(18, 2);
 
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.OrderNumber)
+                .IsUnique();
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.CheckoutIdempotencyKey)
+                .IsUnique()
+                .HasFilter("[CheckoutIdempotencyKey] IS NOT NULL");
+
             modelBuilder.Entity<OrderItem>()
                 .Property(oi => oi.Price)
                 .HasPrecision(18, 2);
 
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(orderItem => orderItem.Product)
+                .WithMany()
+                .HasForeignKey(orderItem => orderItem.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Payment>()
+                .Property(payment => payment.Amount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Payment>()
+                .HasIndex(payment => payment.IdempotencyKey)
+                .IsUnique();
+
+            modelBuilder.Entity<Payment>()
+                .HasIndex(payment => new { payment.Provider, payment.ProviderPaymentId })
+                .IsUnique()
+                .HasFilter("[ProviderPaymentId] IS NOT NULL");
+
+            modelBuilder.Entity<PaymentEvent>()
+                .HasIndex(paymentEvent => new
+                {
+                    paymentEvent.Provider,
+                    paymentEvent.ProviderEventId
+                })
+                .IsUnique();
+
+            modelBuilder.Entity<PaymentAttempt>()
+                .HasIndex(attempt => attempt.IdempotencyKey)
+                .IsUnique();
+
+            modelBuilder.Entity<PaymentAttempt>()
+                .HasIndex(attempt => new { attempt.Provider, attempt.ConversationId })
+                .IsUnique();
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .Property(transaction => transaction.PaidAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .Property(transaction => transaction.RefundedAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasIndex(transaction => new
+                {
+                    transaction.Provider,
+                    transaction.ProviderTransactionId
+                })
+                .IsUnique();
+
+            modelBuilder.Entity<Refund>()
+                .Property(refund => refund.Amount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Refund>()
+                .HasIndex(refund => refund.IdempotencyKey)
+                .IsUnique();
+
+            modelBuilder.Entity<Refund>()
+                .HasIndex(refund => new { refund.Provider, refund.ProviderRefundId })
+                .IsUnique()
+                .HasFilter("[ProviderRefundId] IS NOT NULL");
+
+            modelBuilder.Entity<OutboxMessage>()
+                .HasIndex(message => message.EventId)
+                .IsUnique();
+
+            modelBuilder.Entity<Shipment>()
+                .HasIndex(shipment => shipment.IdempotencyKey)
+                .IsUnique();
+
+            modelBuilder.Entity<Shipment>()
+                .HasIndex(shipment => new { shipment.Carrier, shipment.TrackingNumber })
+                .IsUnique()
+                .HasFilter("[Carrier] IS NOT NULL AND [TrackingNumber] IS NOT NULL");
+
+            modelBuilder.Entity<ReturnRequest>()
+                .HasIndex(request => request.IdempotencyKey)
+                .IsUnique();
+
+            modelBuilder.Entity<ReturnRequest>()
+                .HasIndex(request => request.RefundId)
+                .IsUnique()
+                .HasFilter("[RefundId] IS NOT NULL");
+
+            modelBuilder.Entity<ReturnRequest>()
+                .HasIndex(request => request.ExternalRefundRequestReference)
+                .IsUnique()
+                .HasFilter("[ExternalRefundRequestReference] IS NOT NULL");
+
+            modelBuilder.Entity<ReturnRequest>()
+                .HasIndex(request => request.ExternalRefundConfirmationReference)
+                .IsUnique()
+                .HasFilter("[ExternalRefundConfirmationReference] IS NOT NULL");
+
+            modelBuilder.Entity<Order>()
+                .HasOne(order => order.Payment)
+                .WithOne(payment => payment.Order)
+                .HasForeignKey<Payment>(payment => payment.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Payment>()
+                .HasMany(payment => payment.Events)
+                .WithOne(paymentEvent => paymentEvent.Payment)
+                .HasForeignKey(paymentEvent => paymentEvent.PaymentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Payment>()
+                .HasMany(payment => payment.Attempts)
+                .WithOne(attempt => attempt.Payment)
+                .HasForeignKey(attempt => attempt.PaymentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Payment>()
+                .HasMany(payment => payment.Transactions)
+                .WithOne(transaction => transaction.Payment)
+                .HasForeignKey(transaction => transaction.PaymentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasOne(transaction => transaction.OrderItem)
+                .WithMany()
+                .HasForeignKey(transaction => transaction.OrderItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Payment>()
+                .HasMany(payment => payment.Refunds)
+                .WithOne(refund => refund.Payment)
+                .HasForeignKey(refund => refund.PaymentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Refund>()
+                .HasOne(refund => refund.PaymentTransaction)
+                .WithMany()
+                .HasForeignKey(refund => refund.PaymentTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Shipment>()
+                .HasOne(shipment => shipment.Order)
+                .WithMany()
+                .HasForeignKey(shipment => shipment.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Shipment>()
+                .HasMany(shipment => shipment.Items)
+                .WithOne(item => item.Shipment)
+                .HasForeignKey(item => item.ShipmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ShipmentItem>()
+                .HasOne(item => item.OrderItem)
+                .WithMany()
+                .HasForeignKey(item => item.OrderItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ReturnRequest>()
+                .HasOne(request => request.Order)
+                .WithMany()
+                .HasForeignKey(request => request.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ReturnRequest>()
+                .HasOne(request => request.Refund)
+                .WithOne()
+                .HasForeignKey<ReturnRequest>(request => request.RefundId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ReturnRequest>()
+                .HasMany(request => request.Items)
+                .WithOne(item => item.ReturnRequest)
+                .HasForeignKey(item => item.ReturnRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ReturnItem>()
+                .HasOne(item => item.OrderItem)
+                .WithMany()
+                .HasForeignKey(item => item.OrderItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InventoryReservation>()
+                .ToTable("InventoryReservations", table =>
+                {
+                    table.HasCheckConstraint(
+                        "CK_InventoryReservations_Status",
+                        "[Status] IN ('Active', 'Committed', 'Released', 'Expired')");
+                    table.HasCheckConstraint(
+                        "CK_InventoryReservations_CommitLink",
+                        "([Status] = 'Committed' AND [CommittedOrderId] IS NOT NULL) OR " +
+                        "([Status] <> 'Committed' AND [CommittedOrderId] IS NULL)");
+                    table.HasCheckConstraint(
+                        "CK_InventoryReservations_Timestamps",
+                        "[ExpiresAt] > [CreatedAt] AND [UpdatedAt] >= [CreatedAt]");
+                });
+
+            modelBuilder.Entity<InventoryReservation>()
+                .HasIndex(reservation => reservation.IdempotencyKey)
+                .IsUnique();
+
+            modelBuilder.Entity<InventoryReservation>()
+                .HasIndex(reservation => reservation.CommittedOrderId)
+                .IsUnique()
+                .HasFilter("[CommittedOrderId] IS NOT NULL");
+
+            modelBuilder.Entity<InventoryReservation>()
+                .HasOne(reservation => reservation.CommittedOrder)
+                .WithOne()
+                .HasForeignKey<InventoryReservation>(reservation => reservation.CommittedOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InventoryReservation>()
+                .HasMany(reservation => reservation.Items)
+                .WithOne(item => item.InventoryReservation)
+                .HasForeignKey(item => item.InventoryReservationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InventoryReservationItem>()
+                .ToTable("InventoryReservationItems", table =>
+                    table.HasCheckConstraint(
+                        "CK_InventoryReservationItems_Quantity",
+                        "[Quantity] > 0"));
+
+            modelBuilder.Entity<InventoryReservationItem>()
+                .HasOne(item => item.Product)
+                .WithMany()
+                .HasForeignKey(item => item.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<AdminAuditEvent>()
+                .ToTable("AdminAuditEvents", table =>
+                {
+                    table.HasCheckConstraint(
+                        "CK_AdminAuditEvents_PositiveIdentity",
+                        "[Sequence] > 0 AND [ActorUserId] > 0 AND [AggregateId] > 0");
+                    table.HasCheckConstraint(
+                        "CK_AdminAuditEvents_Outcome",
+                        "[Outcome] IN ('succeeded', 'rejected', 'failed', 'replayed')");
+                    table.HasCheckConstraint(
+                        "CK_AdminAuditEvents_Role",
+                        "[ActorRole] IN ('finance', 'warehouse', 'catalog', 'support', 'superadmin', 'Admin')");
+                });
+
+            modelBuilder.Entity<AdminAuditIntent>()
+                .ToTable("AdminAuditIntents", table =>
+                {
+                    table.HasCheckConstraint(
+                        "CK_AdminAuditIntents_PositiveIdentity",
+                        "[ActorUserId] > 0 AND [AggregateId] > 0 AND [AttemptCount] >= 0");
+                    table.HasCheckConstraint(
+                        "CK_AdminAuditIntents_Outcome",
+                        "[Outcome] IN ('succeeded', 'rejected', 'failed', 'replayed')");
+                    table.HasCheckConstraint(
+                        "CK_AdminAuditIntents_Status",
+                        "[Status] IN ('pending', 'processing', 'succeeded', 'failed')");
+                    table.HasCheckConstraint(
+                        "CK_AdminAuditIntents_Role",
+                        "[ActorRole] IN ('finance', 'warehouse', 'catalog', 'support', 'superadmin', 'Admin')");
+                    table.HasCheckConstraint(
+                        "CK_AdminAuditIntents_Lease",
+                        "([Status] = 'processing' AND [LeaseId] IS NOT NULL AND [LeaseExpiresAtUtc] IS NOT NULL) OR " +
+                        "([Status] <> 'processing' AND [LeaseId] IS NULL AND [LeaseExpiresAtUtc] IS NULL)");
+                });
+
             // Seed data
             SeedData(modelBuilder);
+
+            // Keep the legacy database column types aligned with the existing migration snapshot.
+            // API validation still uses Data Annotations; schema tightening needs its own audited migration.
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                         .Where(entityType =>
+                             entityType.ClrType != typeof(Payment) &&
+                             entityType.ClrType != typeof(PaymentEvent) &&
+                             entityType.ClrType != typeof(PaymentAttempt) &&
+                             entityType.ClrType != typeof(PaymentTransaction) &&
+                             entityType.ClrType != typeof(Refund) &&
+                             entityType.ClrType != typeof(OutboxMessage) &&
+                             entityType.ClrType != typeof(Shipment) &&
+                             entityType.ClrType != typeof(ShipmentItem) &&
+                             entityType.ClrType != typeof(ReturnRequest) &&
+                             entityType.ClrType != typeof(ReturnItem) &&
+                             entityType.ClrType != typeof(InventoryReservation) &&
+                             entityType.ClrType != typeof(InventoryReservationItem) &&
+                             entityType.ClrType != typeof(HostedCheckoutSession) &&
+                             entityType.ClrType != typeof(AdminAuditEvent) &&
+                             entityType.ClrType != typeof(AdminAuditIntent) &&
+                             entityType.ClrType != typeof(VehicleMake) &&
+                             entityType.ClrType != typeof(VehicleModel) &&
+                             entityType.ClrType != typeof(VehicleGeneration) &&
+                             entityType.ClrType != typeof(VehicleEngine) &&
+                             entityType.ClrType != typeof(Vehicle) &&
+                             entityType.ClrType != typeof(ProductFitment) &&
+                             entityType.ClrType != typeof(ProductIdentifier) &&
+                             entityType.ClrType != typeof(Supplier) &&
+                             entityType.ClrType != typeof(SupplierOffer) &&
+                             entityType.ClrType != typeof(DealerApplication) &&
+                             entityType.ClrType != typeof(CustomerGroup) &&
+                             entityType.ClrType != typeof(PriceList) &&
+                             entityType.ClrType != typeof(PriceRule) &&
+                             entityType.ClrType != typeof(BulkQuoteRequest) &&
+                             entityType.ClrType != typeof(BulkQuoteLine) &&
+                             entityType.ClrType != typeof(SalesChannel) &&
+                             entityType.ClrType != typeof(ChannelListing) &&
+                             entityType.ClrType != typeof(ChannelOrderLink) &&
+                             entityType.ClrType != typeof(ChannelInboxEvent) &&
+                             entityType.ClrType != typeof(UserVehicle) &&
+                             entityType.ClrType != typeof(MaintenanceRecord) &&
+                             entityType.ClrType != typeof(MaintenanceRecordItem) &&
+                             entityType.ClrType != typeof(MaintenanceReminder) &&
+                             entityType.ClrType != typeof(LegalDocumentVersion) &&
+                             entityType.ClrType != typeof(LegalAcceptance)))
+            {
+                foreach (var property in entityType.GetProperties()
+                             .Where(property => property.ClrType == typeof(string)))
+                {
+                    property.SetMaxLength(null);
+                }
+            }
+
+            modelBuilder.Entity<Order>()
+                .Property(order => order.OrderNumber)
+                .HasMaxLength(50);
+
+            modelBuilder.Entity<Order>()
+                .Property(order => order.CheckoutIdempotencyKey)
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<User>()
+                .Property(user => user.Email)
+                .HasMaxLength(200);
+
+            modelBuilder.Entity<User>()
+                .HasIndex(user => user.Email)
+                .IsUnique();
         }
 
         private void SeedData(ModelBuilder modelBuilder)
@@ -1504,6 +1893,13 @@ namespace AutoPartsStore.API.Data
                     PartBrandId = 7 // Gates
                 },
             };
+
+            var productSeedTimestamp = new DateTime(2025, 11, 3, 12, 0, 0, DateTimeKind.Utc);
+            foreach (var product in products)
+            {
+                product.CreatedAt = productSeedTimestamp;
+                product.UpdatedAt = productSeedTimestamp;
+            }
 
             modelBuilder.Entity<Product>().HasData(products);
 

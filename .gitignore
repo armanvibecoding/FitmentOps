@@ -88,11 +88,11 @@ _ReSharper*/
 node_modules/
 /.pnp
 .pnp.js
-package-lock.json
 yarn.lock
 
 # Testing
-/coverage
+coverage/
+[Tt]est[Rr]esults/
 
 # Production
 /build
@@ -160,6 +160,10 @@ yarn-error.log*
 *.tmp
 *.temp
 *.cache
+work-*.sql
+work/
+__pycache__/
+*.py[cod]
 
 # ===========================================
 # Application specific
@@ -168,6 +172,9 @@ yarn-error.log*
 # Vite
 .vite/
 *.local
+
+# Playwright CLI runtime captures
+.playwright-cli/
 
 # User uploads (if any)
 uploads/

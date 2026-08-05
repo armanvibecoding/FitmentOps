@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -79,8 +79,14 @@ const Header = () => {
                     <Link to="/orders" onClick={() => setIsUserMenuOpen(false)}>
                       📦 Siparişlerim
                     </Link>
+                    <Link to="/garajim" onClick={() => setIsUserMenuOpen(false)}>
+                      Garajım ve bakım
+                    </Link>
                     <Link to="/wishlist" onClick={() => setIsUserMenuOpen(false)}>
                       ❤️ Favorilerim
+                    </Link>
+                    <Link to="/kurumsal" onClick={() => setIsUserMenuOpen(false)}>
+                      Kurumsal merkez
                     </Link>
                     {isAdmin() && (
                       <Link to="/admin" onClick={() => setIsUserMenuOpen(false)}>

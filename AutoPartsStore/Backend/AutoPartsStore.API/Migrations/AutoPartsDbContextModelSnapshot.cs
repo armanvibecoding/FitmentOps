@@ -22,6 +22,185 @@ namespace AutoPartsStore.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("AutoPartsStore.API.Models.AdminAuditEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("ActorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("AggregateId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AggregateType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("CorrelationIdSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("EventHashSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("IdempotencyKeySha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PreviousEventHashSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKeySha256")
+                        .IsUnique();
+
+                    b.HasIndex("OccurredAtUtc");
+
+                    b.HasIndex("Sequence")
+                        .IsUnique();
+
+                    b.ToTable("AdminAuditEvents", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AdminAuditEvents_Outcome", "[Outcome] IN ('succeeded', 'rejected', 'failed', 'replayed')");
+
+                            t.HasCheckConstraint("CK_AdminAuditEvents_PositiveIdentity", "[Sequence] > 0 AND [ActorUserId] > 0 AND [AggregateId] > 0");
+
+                            t.HasCheckConstraint("CK_AdminAuditEvents_Role", "[ActorRole] IN ('finance', 'warehouse', 'catalog', 'support', 'superadmin', 'Admin')");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.AdminAuditIntent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("ActorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("AggregateId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AggregateType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CorrelationIdSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("LeaseExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("LeaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OperationId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "LeaseExpiresAtUtc");
+
+                    b.HasIndex("Status", "NextAttemptAtUtc");
+
+                    b.ToTable("AdminAuditIntents", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AdminAuditIntents_Lease", "([Status] = 'processing' AND [LeaseId] IS NOT NULL AND [LeaseExpiresAtUtc] IS NOT NULL) OR ([Status] <> 'processing' AND [LeaseId] IS NULL AND [LeaseExpiresAtUtc] IS NULL)");
+
+                            t.HasCheckConstraint("CK_AdminAuditIntents_Outcome", "[Outcome] IN ('succeeded', 'rejected', 'failed', 'replayed')");
+
+                            t.HasCheckConstraint("CK_AdminAuditIntents_PositiveIdentity", "[ActorUserId] > 0 AND [AggregateId] > 0 AND [AttemptCount] >= 0");
+
+                            t.HasCheckConstraint("CK_AdminAuditIntents_Role", "[ActorRole] IN ('finance', 'warehouse', 'catalog', 'support', 'superadmin', 'Admin')");
+
+                            t.HasCheckConstraint("CK_AdminAuditIntents_Status", "[Status] IN ('pending', 'processing', 'succeeded', 'failed')");
+                        });
+                });
+
             modelBuilder.Entity("AutoPartsStore.API.Models.Brand", b =>
                 {
                     b.Property<int>("Id")
@@ -198,6 +377,141 @@ namespace AutoPartsStore.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AutoPartsStore.API.Models.BulkQuoteLine", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int?>("AvailableQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<long>("BulkQuoteRequestId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("LeadTimeDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LineNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NormalizedIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("QuotedUnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RequestedIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("RequestedQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("BulkQuoteRequestId", "LineNumber")
+                        .IsUnique();
+
+                    b.ToTable("BulkQuoteLines", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BulkQuoteLines_Quantity", "[LineNumber] > 0 AND [RequestedQuantity] > 0 AND ([AvailableQuantity] IS NULL OR [AvailableQuantity] >= 0) AND ([LeadTimeDays] IS NULL OR [LeadTimeDays] >= 0)");
+
+                            t.HasCheckConstraint("CK_BulkQuoteLines_Quote", "([Status] = 'Quoted' AND [QuotedUnitPrice] IS NOT NULL AND [QuotedUnitPrice] > 0) OR ([Status] <> 'Quoted' AND [QuotedUnitPrice] IS NULL)");
+
+                            t.HasCheckConstraint("CK_BulkQuoteLines_Status", "[Status] IN ('Unmatched', 'Matched', 'Quoted', 'Unavailable')");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.BulkQuoteRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("AcceptedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("QuoteValidUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("QuotedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RequestNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("RequestNumber")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "Status", "CreatedAtUtc");
+
+                    b.ToTable("BulkQuoteRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BulkQuoteRequests_Status", "[Status] IN ('Submitted', 'UnderReview', 'Quoted', 'Accepted', 'Rejected', 'Expired')");
+
+                            t.HasCheckConstraint("CK_BulkQuoteRequests_Timestamps", "[UpdatedAtUtc] >= [CreatedAtUtc] AND ([QuoteValidUntilUtc] IS NULL OR [QuotedAtUtc] IS NOT NULL) AND ([AcceptedAtUtc] IS NULL OR [Status] = 'Accepted')");
+                        });
+                });
+
             modelBuilder.Entity("AutoPartsStore.API.Models.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -290,6 +604,710 @@ namespace AutoPartsStore.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AutoPartsStore.API.Models.ChannelInboxEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("ChannelOrderLinkId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ExternalEventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("ProcessedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SalesChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChannelOrderLinkId");
+
+                    b.HasIndex("SalesChannelId", "ExternalEventId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "ReceivedAtUtc");
+
+                    b.ToTable("ChannelInboxEvents", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ChannelInboxEvents_Status", "[Status] IN ('Processed', 'Failed')");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ChannelListing", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DesiredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("DesiredPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("DesiredStock")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExternalListingId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("LastAttemptAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastFailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("LastSuccessAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("ObservedPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ObservedStock")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SalesChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("SalesChannelId", "ExternalListingId")
+                        .IsUnique()
+                        .HasFilter("[ExternalListingId] IS NOT NULL");
+
+                    b.HasIndex("SalesChannelId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ChannelListings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ChannelListings_Desired", "[DesiredPrice] > 0 AND [DesiredStock] >= 0");
+
+                            t.HasCheckConstraint("CK_ChannelListings_Observed", "([ObservedPrice] IS NULL OR [ObservedPrice] > 0) AND ([ObservedStock] IS NULL OR [ObservedStock] >= 0)");
+
+                            t.HasCheckConstraint("CK_ChannelListings_Status", "[Status] IN ('Blocked', 'Pending', 'Active', 'Error')");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ChannelOrderLink", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExternalOrderId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SalesChannelId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("SalesChannelId", "ExternalOrderId")
+                        .IsUnique();
+
+                    b.ToTable("ChannelOrderLinks");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.CustomerGroup", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("CustomerGroups", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CustomerGroups_Priority", "[Priority] >= 0");
+
+                            t.HasCheckConstraint("CK_CustomerGroups_Timestamps", "[UpdatedAtUtc] >= [CreatedAtUtc]");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.DealerApplication", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ContactPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("CustomerGroupId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("TaxNumber")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerGroupId");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("DealerApplications", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DealerApplications_Group", "([Status] = 'Approved' AND [CustomerGroupId] IS NOT NULL) OR ([Status] <> 'Approved')");
+
+                            t.HasCheckConstraint("CK_DealerApplications_Status", "[Status] IN ('Pending', 'Approved', 'Rejected', 'Suspended')");
+
+                            t.HasCheckConstraint("CK_DealerApplications_Timestamps", "[UpdatedAtUtc] >= [CreatedAtUtc]");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.HostedCheckoutSession", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<long>("InventoryReservationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("InventoryReservationId")
+                        .IsUnique();
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.ToTable("HostedCheckoutSessions", (string)null);
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.InventoryReservation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int?>("CommittedOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommittedOrderId")
+                        .IsUnique()
+                        .HasFilter("[CommittedOrderId] IS NOT NULL");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("InventoryReservations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_InventoryReservations_CommitLink", "([Status] = 'Committed' AND [CommittedOrderId] IS NOT NULL) OR ([Status] <> 'Committed' AND [CommittedOrderId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_InventoryReservations_Status", "[Status] IN ('Active', 'Committed', 'Released', 'Expired')");
+
+                            t.HasCheckConstraint("CK_InventoryReservations_Timestamps", "[ExpiresAt] > [CreatedAt] AND [UpdatedAt] >= [CreatedAt]");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.InventoryReservationItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("InventoryReservationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("InventoryReservationId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("InventoryReservationItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_InventoryReservationItems_Quantity", "[Quantity] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.LegalAcceptance", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("AcceptedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CheckoutReferenceSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .IsFixedLength();
+
+                    b.Property<string>("ContentSha256Snapshot")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .IsFixedLength();
+
+                    b.Property<string>("DocumentTypeSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<long>("LegalDocumentVersionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VersionSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegalDocumentVersionId");
+
+                    b.HasIndex("OrderId", "DocumentTypeSnapshot")
+                        .IsUnique();
+
+                    b.ToTable("LegalAcceptances");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.LegalDocumentVersion", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(100000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("PublishedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("RetiredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentType")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Published'");
+
+                    b.HasIndex("DocumentType", "Version")
+                        .IsUnique();
+
+                    b.ToTable("LegalDocumentVersions", t =>
+                        {
+                            t.HasCheckConstraint("CK_LegalDocumentVersions_Status", "[Status] IN ('Draft', 'Published', 'Retired')");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.MaintenanceRecord", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("OdometerKm")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ServiceDateUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ServiceProvider")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int>("UserVehicleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserVehicleId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("UserVehicleId", "ServiceDateUtc");
+
+                    b.ToTable("MaintenanceRecords", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MaintenanceRecords_Odometer", "[OdometerKm] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.MaintenanceRecordItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<long>("MaintenanceRecordId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ServiceType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<decimal?>("UnitCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaintenanceRecordId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("MaintenanceRecordItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MaintenanceRecordItems_Quantity", "[Quantity] > 0");
+
+                            t.HasCheckConstraint("CK_MaintenanceRecordItems_UnitCost", "[UnitCost] IS NULL OR [UnitCost] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.MaintenanceReminder", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DueDateUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DueOdometerKm")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserVehicleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserVehicleId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("IsCompleted", "DueDateUtc", "DueOdometerKm");
+
+                    b.ToTable("MaintenanceReminders", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MaintenanceReminders_Completion", "([IsCompleted] = 0 AND [CompletedAtUtc] IS NULL) OR ([IsCompleted] = 1 AND [CompletedAtUtc] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_MaintenanceReminders_DueTarget", "[DueDateUtc] IS NOT NULL OR [DueOdometerKm] IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_MaintenanceReminders_Odometer", "[DueOdometerKm] IS NULL OR [DueOdometerKm] >= 0");
+                        });
+                });
+
             modelBuilder.Entity("AutoPartsStore.API.Models.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -297,6 +1315,10 @@ namespace AutoPartsStore.API.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CheckoutIdempotencyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("City")
                         .IsRequired()
@@ -319,7 +1341,8 @@ namespace AutoPartsStore.API.Migrations
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("PostalCode")
                         .IsRequired()
@@ -341,6 +1364,13 @@ namespace AutoPartsStore.API.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CheckoutIdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("[CheckoutIdempotencyKey] IS NOT NULL");
+
+                    b.HasIndex("OrderNumber")
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -375,6 +1405,57 @@ namespace AutoPartsStore.API.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.OutboxMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AggregateId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("NextAttemptAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .IsUnique();
+
+                    b.HasIndex("ProcessedAt", "NextAttemptAt");
+
+                    b.ToTable("OutboxMessages");
                 });
 
             modelBuilder.Entity("AutoPartsStore.API.Models.PartBrand", b =>
@@ -505,6 +1586,396 @@ namespace AutoPartsStore.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AutoPartsStore.API.Models.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderPaymentId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("Provider", "ProviderPaymentId")
+                        .IsUnique()
+                        .HasFilter("[ProviderPaymentId] IS NOT NULL");
+
+                    b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PaymentAttempt", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ConversationId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("HostedPaymentToken")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderPaymentId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ProviderResultCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RedirectUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("Provider", "ConversationId")
+                        .IsUnique();
+
+                    b.ToTable("PaymentAttempts");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PaymentEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PayloadSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int?>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProcessingStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderEventId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("Provider", "ProviderEventId")
+                        .IsUnique();
+
+                    b.ToTable("PaymentEvents");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PaymentTransaction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("RefundedAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("PaymentId", "OrderItemId");
+
+                    b.HasIndex("Provider", "ProviderTransactionId")
+                        .IsUnique();
+
+                    b.ToTable("PaymentTransactions");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PriceList", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<long>("CustomerGroupId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("ValidFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ValidToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CustomerGroupId");
+
+                    b.ToTable("PriceLists", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PriceLists_Validity", "[ValidToUtc] IS NULL OR [ValidToUtc] > [ValidFromUtc]");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PriceRule", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int?>("BrandId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("DiscountPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("FixedUnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("MinimumPeriodRevenue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MinimumQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<long>("PriceListId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ValidFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ValidToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BrandId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("PriceListId", "Priority", "ValidFromUtc");
+
+                    b.ToTable("PriceRules", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PriceRules_Adjustment", "([DiscountPercentage] IS NULL AND [FixedUnitPrice] IS NOT NULL) OR ([DiscountPercentage] IS NOT NULL AND [FixedUnitPrice] IS NULL)");
+
+                            t.HasCheckConstraint("CK_PriceRules_DiscountRange", "[DiscountPercentage] IS NULL OR (CAST([DiscountPercentage] AS REAL) > 0 AND CAST([DiscountPercentage] AS REAL) < 100)");
+
+                            t.HasCheckConstraint("CK_PriceRules_FixedPriceRange", "[FixedUnitPrice] IS NULL OR [FixedUnitPrice] > 0");
+
+                            t.HasCheckConstraint("CK_PriceRules_QuantityRevenue", "[MinimumQuantity] > 0 AND [MinimumPeriodRevenue] >= 0");
+
+                            t.HasCheckConstraint("CK_PriceRules_Validity", "[ValidToUtc] IS NULL OR [ValidToUtc] > [ValidFromUtc]");
+                        });
+                });
+
             modelBuilder.Entity("AutoPartsStore.API.Models.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -595,7 +2066,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Orijinal Kalite",
                             BrandId = 1,
                             CategoryId = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 833, DateTimeKind.Utc).AddTicks(7928),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Orijinal kalite yağ filtresi (Bosch üretimi). Mercedes-Benz W205, W213 modelleri için uyumlu. OM651 motor. Premium filtrasyon teknolojisi. 25.000 km kullanım ömrü.",
                             DiscountPercentage = 22,
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
@@ -609,7 +2080,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 187,
                             Stock = 45,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 833, DateTimeKind.Utc).AddTicks(7933)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -618,7 +2089,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Orijinal Kalite",
                             BrandId = 2,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1818),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ön fren disk seti (Brembo üretimi). F30, F31, F34 modelleri için. 348mm çap, havalandırmalı tasarım. ECE R90 onaylı. Yüksek performans frenleme.",
                             DiscountPercentage = 16,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -632,7 +2103,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 164,
                             Stock = 22,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1821)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -640,7 +2111,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 3,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1834),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Düşük küllenme özellikleri ile dizel partikül filtresi koruması. Mercedes-Benz, BMW, VW onaylı. Uzun motor ömrü sağlar.",
                             ImageUrl = "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&q=80",
                             IsFeatured = false,
@@ -652,7 +2123,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 142,
                             Stock = 28,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1834)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -661,7 +2132,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "%15 İndirim",
                             BrandId = 4,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1860),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ön fren diski, havalandırmalı tasarım. Volkswagen Golf 7, Audi A3, Skoda Octavia uyumlu. 312mm çap, yüksek performans.",
                             DiscountPercentage = 15,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -675,7 +2146,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 85,
                             Stock = 18,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1861)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -683,7 +2154,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 5,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1866),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Yüksek performanslı ön fren balata takımı. Az toz üreten formül. ECE R90 onaylı. Sessiz ve etkili frenleme.",
                             ImageUrl = "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&q=80",
                             IsFeatured = false,
@@ -695,7 +2166,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 103,
                             Stock = 42,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1866)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -703,7 +2174,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 6,
                             CategoryId = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1902),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Orijinal kalite yağ filtresi. W 712/75 model. Premium multi-grade filtrasyon teknolojisi. 25.000 km kullanım ömrü.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -715,7 +2186,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 215,
                             Stock = 120,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1903)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -723,7 +2194,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 5,
                             CategoryId = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1907),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Motor hava filtresi. Yüksek filtrasyon performansı. %99.9 toz tutma kapasitesi. Yakıt tasarrufu sağlar.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -735,7 +2206,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 92,
                             Stock = 85,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1907)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -743,7 +2214,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 6,
                             CategoryId = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1911),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Aktif karbonlu kabin hava filtresi. Alerjenleri %99 filtreler. Koku ve bakteri önleyici. Sağlıklı kabin havası.",
                             ImageUrl = "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&q=80",
                             IsFeatured = false,
@@ -755,7 +2226,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 78,
                             Stock = 67,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1912)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -764,7 +2235,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Çok Satan",
                             BrandId = 7,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1915),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "60AH 540A Blue Dynamic akü. 3 yıl garanti. Start-Stop teknolojisi. Uzun ömürlü ve güvenilir.",
                             DiscountPercentage = 10,
                             ImageUrl = "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=500&q=80",
@@ -778,7 +2249,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 246,
                             Stock = 22,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1916)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -786,7 +2257,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 5,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1921),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "77AH 780A Silver Plus akü. Üstün performans. Soğuk havada güçlü çalıştırma. 4 yıl garanti.",
                             ImageUrl = "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=500&q=80",
                             IsFeatured = false,
@@ -798,7 +2269,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 187,
                             Stock = 15,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1921)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -806,7 +2277,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 8,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1925),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ön amortisör. OE kalitesinde üretim. Gaz basınçlı teknoloji. Konfor ve güvenlik için tasarlandı.",
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
                             IsFeatured = false,
@@ -818,7 +2289,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 64,
                             Stock = 12,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1926)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -827,7 +2298,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "%25 İndirim",
                             BrandId = 5,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1951),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Arka fren balata seti, 4 adet. Seramik formül. Düşük gürültü, uzun ömür. ECE R90 onaylı.",
                             DiscountPercentage = 25,
                             ImageUrl = "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&q=80",
@@ -841,7 +2312,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 167,
                             Stock = 38,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1951)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -849,7 +2320,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 9,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1956),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Tam sentetik motor yağı. Aşırı koşullarda üstün koruma. VW 502.00/505.00, MB 229.5 onaylı.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -861,7 +2332,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 89,
                             Stock = 44,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1957)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -870,7 +2341,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Yerli Üretim",
                             BrandId = 10,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1961),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Yerli üretim tam sentetik motor yağı. API SN Plus, ACEA C3. Yakıt ekonomisi sağlar.",
                             DiscountPercentage = 16,
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
@@ -884,7 +2355,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 134,
                             Stock = 62,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1962)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -892,7 +2363,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1967),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "DOT 4 fren hidrolik sıvısı. 1 litre. Yüksek kaynama noktası. ABS/ESP uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -904,7 +2375,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 156,
                             Stock = 95,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1967)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -913,7 +2384,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "%17 İndirim",
                             BrandId = 5,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1971),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Arka fren disk seti, 2 adet. Ford Focus, Mondeo uyumlu. 278mm çap.",
                             DiscountPercentage = 17,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -927,7 +2398,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 71,
                             Stock = 24,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1971)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -935,7 +2406,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 6,
                             CategoryId = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1976),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Dizel yakıt filtresi. Su tutucu özellikli. Enjektör koruması sağlar.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -947,7 +2418,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 98,
                             Stock = 78,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1977)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -956,7 +2427,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Set İndirimi",
                             BrandId = 4,
                             CategoryId = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1981),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Komple filtre bakım seti: yağ, hava, polen filtresi. Volkswagen, Audi, Seat, Skoda için.",
                             DiscountPercentage = 24,
                             ImageUrl = "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&q=80",
@@ -970,7 +2441,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 187,
                             Stock = 31,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(1981)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -978,7 +2449,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 2,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2006),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "120A alternatör. BMW 3 Serisi, 5 Serisi uyumlu. Yüksek verimlilik.",
                             ImageUrl = "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=500&q=80",
                             IsFeatured = false,
@@ -990,7 +2461,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 42,
                             Stock = 8,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2007)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -998,7 +2469,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2010),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Güçlü başlatma performansı. Mercedes C-Class, E-Class uyumlu. 2 yıl garanti.",
                             ImageUrl = "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=500&q=80",
                             IsFeatured = false,
@@ -1010,7 +2481,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 65,
                             Stock = 11,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2011)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1019,7 +2490,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Set",
                             BrandId = 11,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2015),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "4 adet platin buji. Uzun ömürlü, yakıt ekonomisi. 60.000 km kullanım garantisi.",
                             DiscountPercentage = 19,
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
@@ -1033,7 +2504,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 203,
                             Stock = 55,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2016)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1042,7 +2513,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Komple Set",
                             BrandId = 11,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2021),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "4 adet amortisör seti. Ön ve arka komple. Toyota Corolla uyumlu. Reflex teknolojisi.",
                             DiscountPercentage = 16,
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
@@ -1056,7 +2527,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 38,
                             Stock = 6,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2021)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1064,7 +2535,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 10,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2026),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Direksiyon rotil başı. Sağ ve sol uyumlu. Ford, Opel modelleri için.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -1076,7 +2547,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 52,
                             Stock = 28,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2027)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1084,7 +2555,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2030),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Alt salıncak burç takımı. VW, Audi için. Orijinal ekipman kalitesi.",
                             ImageUrl = "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=500&q=80",
                             IsFeatured = false,
@@ -1096,7 +2567,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 76,
                             Stock = 47,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2031)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1104,7 +2575,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 17,
                             CategoryId = 6,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2035),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Otomatik şanzıman yağı. 1 litre. GM Dexron VI onaylı. Uzun ömürlü koruma.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -1116,7 +2587,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 142,
                             Stock = 72,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2035)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1124,7 +2595,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 8,
                             CategoryId = 6,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2060),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Manuel şanzıman yağı. API GL-4. Peugeot, Renault onaylı. 1 litre.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -1136,7 +2607,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 87,
                             Stock = 58,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2060)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1145,7 +2616,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Komple Set",
                             BrandId = 7,
                             CategoryId = 6,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2064),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Komple debriyaj takımı: baskı, disk, bilya. Fiat, Opel uyumlu. OE kalitesi.",
                             DiscountPercentage = 15,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -1159,7 +2630,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 94,
                             Stock = 14,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2065)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1167,7 +2638,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 7,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2070),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ön far camı, sol taraf. VW Golf 7 uyumlu. Orijinal ölçülerde.",
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
                             IsFeatured = false,
@@ -1179,7 +2650,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.4000000000000004,
                             ReviewCount = 31,
                             Stock = 16,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2070)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1187,7 +2658,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 5,
                             CategoryId = 7,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2074),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Isıtmalı dış ayna camı, sağ. Ford Focus 3 uyumlu. Kolay montaj.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -1199,7 +2670,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 45,
                             Stock = 33,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2075)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1208,7 +2679,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Fırsat",
                             BrandId = 13,
                             CategoryId = 7,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2078),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Alt ön tampon panjuru/ızgarası. i20 modelleri için. Siyah renk. Orijinal kalite plastik.",
                             DiscountPercentage = 23,
                             ImageUrl = "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&q=80",
@@ -1222,7 +2693,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.2999999999999998,
                             ReviewCount = 28,
                             Stock = 19,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2079)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1230,7 +2701,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2084),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Yüksek performanslı hava filtresi. BMW, Mercedes uyumlu. Uzun ömürlü.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -1242,7 +2713,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 112,
                             Stock = 45,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2084)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1250,7 +2721,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 3,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2088),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Aktif karbonlu polen filtresi. Audi, VW uyumlu. Anti-alerjik.",
                             DiscountPercentage = 21,
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
@@ -1264,7 +2735,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 89,
                             Stock = 38,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2089)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1272,7 +2743,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 11,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2093),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Havalandırmalı fren diski, ön aks. Toyota, Honda uyumlu. Yüksek karbon içerik.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = true,
@@ -1284,7 +2755,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 156,
                             Stock = 22,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2094)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1293,7 +2764,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Kaliteli",
                             BrandId = 6,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2117),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Komple fren kaliperi, ön sağ. Renault, Dacia uyumlu. Orijinal kalite.",
                             DiscountPercentage = 17,
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
@@ -1307,7 +2778,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 67,
                             Stock = 11,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2118)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1315,7 +2786,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2123),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "60Ah 540A akü. Volkswagen, Seat uyumlu. 2 yıl garanti.",
                             ImageUrl = "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=500&q=80",
                             IsFeatured = true,
@@ -1327,7 +2798,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 203,
                             Stock = 28,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2123)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1336,7 +2807,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Premium",
                             BrandId = 2,
                             CategoryId = 3,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2127),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "75Ah 750A akü. BMW, Mercedes uyumlu. AGM teknoloji.",
                             DiscountPercentage = 11,
                             ImageUrl = "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=500&q=80",
@@ -1350,7 +2821,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 187,
                             Stock = 15,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2128)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1358,7 +2829,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2133),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Tam sentetik motor yağı 5W-30. 4 litre. VW 504.00/507.00 onaylı.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = true,
@@ -1370,7 +2841,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 341,
                             Stock = 67,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2133)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1378,7 +2849,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2137),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sentetik dizel motor yağı. 5 litre. Mercedes onaylı. DPF uyumlu.",
                             DiscountPercentage = 13,
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
@@ -1392,7 +2863,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 278,
                             Stock = 42,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2137)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1400,7 +2871,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 2,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2142),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Tam sentetik motor yağı 0W-40. 1 litre. BMW Longlife onaylı.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -1412,7 +2883,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 167,
                             Stock = 95,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2143)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1420,7 +2891,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 6,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2146),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sentetik benzinli motor yağı. 4 litre. Renault onaylı.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -1432,7 +2903,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 143,
                             Stock = 53,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2147)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1440,7 +2911,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 5,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2171),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Yarı sentetik motor yağı. 4 litre. Fiat, Ford uyumlu.",
                             DiscountPercentage = 16,
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
@@ -1454,7 +2925,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 198,
                             Stock = 78,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2171)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1462,7 +2933,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2192),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Gaz yağ amortisör, ön sol. VW, Skoda uyumlu. OE kalitesi.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -1474,7 +2945,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 124,
                             Stock = 26,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2192)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1483,7 +2954,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Takım",
                             BrandId = 5,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2196),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Gaz yağ amortisör takımı, arka. Ford, Mazda uyumlu. 2'li set.",
                             DiscountPercentage = 15,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -1497,7 +2968,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 97,
                             Stock = 18,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2196)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1505,7 +2976,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2201),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Orijinal kalite amortisör. Mercedes, Audi uyumlu. Uzun ömürlü.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -1517,7 +2988,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 156,
                             Stock = 21,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2202)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1525,7 +2996,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 2,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2206),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ön rotbaşı. BMW, Opel uyumlu. Alman kalitesi.",
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
                             IsFeatured = false,
@@ -1537,7 +3008,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 82,
                             Stock = 34,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2206)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1545,7 +3016,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 5,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2210),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Alt salıncak burcu. Volkswagen, Seat uyumlu. Polyüretan.",
                             DiscountPercentage = 21,
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
@@ -1559,7 +3030,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 94,
                             Stock = 56,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2211)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1567,7 +3038,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 6,
                             CategoryId = 6,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2215),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Debriyaj disk balatası. Renault, Dacia uyumlu. Yüksek sürtünme.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -1579,7 +3050,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 118,
                             Stock = 29,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2216)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1587,7 +3058,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 3,
                             CategoryId = 6,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2220),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Debriyaj baskı tabağı. Volkswagen, Audi uyumlu. Hidrolik sistem.",
                             DiscountPercentage = 15,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -1601,7 +3072,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 89,
                             Stock = 17,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2220)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1609,7 +3080,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 5,
                             CategoryId = 6,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2247),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "4'lü platin buji takımı. Ford, Mazda uyumlu. 60.000 km ömür.",
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
                             IsFeatured = true,
@@ -1621,7 +3092,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 267,
                             Stock = 43,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2248)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1629,7 +3100,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 2,
                             CategoryId = 6,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2251),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Elektronik ateşleme bobini. BMW, Mercedes uyumlu. Yüksek voltaj.",
                             DiscountPercentage = 15,
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
@@ -1643,7 +3114,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 143,
                             Stock = 31,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2252)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1651,7 +3122,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 8,
                             CategoryId = 7,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2257),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Komple far ünitesi sağ. Peugeot 308 uyumlu. H7 ampul girişi.",
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
                             IsFeatured = false,
@@ -1663,7 +3134,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 54,
                             Stock = 12,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2257)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1672,7 +3143,7 @@ namespace AutoPartsStore.API.Migrations
                             BadgeText = "Xenon",
                             BrandId = 3,
                             CategoryId = 7,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2261),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "D2S Xenon ampul. BMW, Audi uyumlu. 4300K beyaz ışık.",
                             DiscountPercentage = 17,
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
@@ -1686,7 +3157,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 186,
                             Stock = 23,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2262)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1694,7 +3165,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 11,
                             CategoryId = 7,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2266),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Arka stop lambası sol. Toyota Corolla uyumlu. LED teknoloji.",
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
                             IsFeatured = false,
@@ -1706,7 +3177,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 72,
                             Stock = 18,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(2267)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1714,7 +3185,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 13,
                             CategoryId = 7,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3076),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Komple ön kaput. Hyundai i20 uyumlu. Boya hazır primer kaplı.",
                             DiscountPercentage = 12,
                             ImageUrl = "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&q=80",
@@ -1728,7 +3199,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.4000000000000004,
                             ReviewCount = 28,
                             Stock = 7,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3078)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1736,7 +3207,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3087),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Dizel yakıt filtresi. Mercedes, VW uyumlu. Su tutucu özellik.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -1748,7 +3219,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 214,
                             Stock = 51,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3087)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1756,7 +3227,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 3,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3119),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Seramik fren balatası, arka. Audi, VW uyumlu. Az toz bırakır.",
                             DiscountPercentage = 14,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -1770,7 +3241,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 289,
                             Stock = 36,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3120)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1778,7 +3249,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 6,
                             CategoryId = 2,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3125),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Fren hidrolik hortumu. Renault, Nissan uyumlu. Paslanmaz uçlar.",
                             ImageUrl = "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=500&q=80",
                             IsFeatured = false,
@@ -1790,7 +3261,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 91,
                             Stock = 44,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3125)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1798,7 +3269,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 2,
                             CategoryId = 6,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3129),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Motor termostat. BMW, Opel uyumlu. 87°C açılma sıcaklığı.",
                             DiscountPercentage = 17,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -1812,7 +3283,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 127,
                             Stock = 39,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3130)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1820,7 +3291,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3135),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sentetik şanzıman yağı. 1 litre. Manuel şanzıman için.",
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
                             IsFeatured = false,
@@ -1832,7 +3303,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 148,
                             Stock = 62,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3135)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1840,7 +3311,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 12,
                             CategoryId = 4,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3139),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Otomatik şanzıman yağı. 1 litre. Çok araç uyumlu.",
                             DiscountPercentage = 17,
                             ImageUrl = "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80",
@@ -1854,7 +3325,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 192,
                             Stock = 73,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3140)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1862,7 +3333,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3144),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "4 silindirli motorlar için standart ölçü piston seti. Yüksek dayanıklı alüminyum alaşım. Mercedes, BMW uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = true,
@@ -1874,7 +3345,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 45,
                             Stock = 12,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3145)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1882,7 +3353,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 2,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3149),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Tamir ölçü piston takımı (+0.50mm). 4 silindirli dizel motorlar için. BMW, Audi uyumlu.",
                             DiscountPercentage = 11,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -1896,7 +3367,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 32,
                             Stock = 8,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3150)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1904,7 +3375,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3175),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Motor devir sensörü. Hassas ölçüm teknolojisi. Volkswagen, Audi, Seat uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=500&q=80",
                             IsFeatured = false,
@@ -1916,7 +3387,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 89,
                             Stock = 35,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3176)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1924,7 +3395,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3180),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ön krank kasnağı. Titreşim damperi dahil. Mercedes, BMW dizel motorlar uyumlu.",
                             DiscountPercentage = 12,
                             ImageUrl = "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=500&q=80",
@@ -1938,7 +3409,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 56,
                             Stock = 15,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3180)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1946,7 +3417,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3185),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Yüksek performanslı su pompası. Metal gövde, uzun ömürlü rulman. Mercedes, BMW uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=500&q=80",
                             IsFeatured = true,
@@ -1958,7 +3429,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 124,
                             Stock = 28,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3185)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1966,7 +3437,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3189),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Su pompası conta seti dahil. Alüminyum gövde. Volkswagen, Audi, Skoda uyumlu.",
                             DiscountPercentage = 18,
                             ImageUrl = "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=500&q=80",
@@ -1980,7 +3451,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 98,
                             Stock = 32,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3190)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -1988,7 +3459,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 2,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3194),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Elektrikli su pompası. Verimli soğutma sistemi. BMW, Audi hibrit modeller uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=500&q=80",
                             IsFeatured = false,
@@ -2000,7 +3471,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.9000000000000004,
                             ReviewCount = 67,
                             Stock = 9,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3195)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -2008,7 +3479,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3199),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "4 silindirli motorlar için emme supap takımı. Isıya dayanıklı özel alaşım. Mercedes, Audi uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -2020,7 +3491,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 41,
                             Stock = 14,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3199)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -2028,7 +3499,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 2,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3203),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Egzoz supap seti 8 adet. Yüksek sıcaklık dayanımlı. BMW, Volkswagen uyumlu.",
                             DiscountPercentage = 12,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -2042,7 +3513,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 38,
                             Stock = 11,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3204)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -2050,7 +3521,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3208),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Metal takviyeli silindir kapak contası. 4 silindirli motorlar. Mercedes, BMW uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = true,
@@ -2062,7 +3533,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 156,
                             Stock = 22,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3209)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -2070,7 +3541,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3212),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Motor üst takım conta seti. Tüm contalar dahil. Volkswagen, Audi, Seat uyumlu.",
                             DiscountPercentage = 14,
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
@@ -2084,7 +3555,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 92,
                             Stock = 17,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3213)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -2092,7 +3563,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3218),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Standart ölçü piston segman takımı. 4 silindir. Mercedes, BMW, Audi uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -2104,7 +3575,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5999999999999996,
                             ReviewCount = 73,
                             Stock = 19,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3218)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -2112,7 +3583,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3222),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Tamir ölçü segman seti (+0.25mm). Dizel ve benzinli motorlar. Volkswagen uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=500&q=80",
                             IsFeatured = false,
@@ -2124,7 +3595,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7999999999999998,
                             ReviewCount = 55,
                             Stock = 16,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3223)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -2132,7 +3603,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 1,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3227),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Motor termostatı 87 derece. Hızlı açılma özelliği. Mercedes, BMW uyumlu.",
                             ImageUrl = "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=500&q=80",
                             IsFeatured = false,
@@ -2144,7 +3615,7 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.5,
                             ReviewCount = 112,
                             Stock = 45,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3227)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -2152,7 +3623,7 @@ namespace AutoPartsStore.API.Migrations
                             AdditionalImages = "[]",
                             BrandId = 4,
                             CategoryId = 1,
-                            CreatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3231),
+                            CreatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Termostat conta dahil 92°C. Volkswagen, Audi, Skoda, Seat uyumlu.",
                             DiscountPercentage = 15,
                             ImageUrl = "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=500&q=80",
@@ -2166,8 +3637,347 @@ namespace AutoPartsStore.API.Migrations
                             Rating = 4.7000000000000002,
                             ReviewCount = 145,
                             Stock = 38,
-                            UpdatedAt = new DateTime(2025, 11, 3, 14, 10, 16, 835, DateTimeKind.Utc).AddTicks(3232)
+                            UpdatedAt = new DateTime(2025, 11, 3, 12, 0, 0, 0, DateTimeKind.Utc)
                         });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ProductFitment", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AssertionKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("Confidence")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Provenance")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("SourceKind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("SourceName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("SourceRecordId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("ValidFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ValidToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("VehicleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId", "VehicleId")
+                        .IsUnique();
+
+                    b.HasIndex("SourceName", "SourceRecordId")
+                        .IsUnique();
+
+                    b.HasIndex("VehicleId", "ValidFromUtc", "ValidToUtc");
+
+                    b.ToTable("ProductFitments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductFitments_Confidence", "[Confidence] >= 0 AND [Confidence] <= 1");
+
+                            t.HasCheckConstraint("CK_ProductFitments_Enums", "[AssertionKind] IN ('Exact', 'Compatible') AND [SourceKind] IN ('UnverifiedImport', 'Manufacturer', 'AuthorizedSupplier', 'LicensedCatalog', 'ManualExpertReview')");
+
+                            t.HasCheckConstraint("CK_ProductFitments_Validity", "[ValidToUtc] IS NULL OR [ValidToUtc] > [ValidFromUtc]");
+
+                            t.HasCheckConstraint("CK_ProductFitments_VerifiedSource", "[IsVerified] = 0 OR [SourceKind] <> 'UnverifiedImport'");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ProductIdentifier", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("NormalizedValue")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Provenance")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("SchemeAuthority")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("SourceKind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("SourceName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("SourceRecordId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("ValidFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ValidToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceName", "SourceRecordId")
+                        .IsUnique();
+
+                    b.HasIndex("Kind", "SchemeAuthority", "NormalizedValue");
+
+                    b.HasIndex("ProductId", "Kind", "SchemeAuthority", "NormalizedValue")
+                        .IsUnique();
+
+                    b.ToTable("ProductIdentifiers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductIdentifiers_Enums", "[Kind] IN ('Oem', 'Interchange', 'ManufacturerPartNumber', 'SupplierSku') AND [SourceKind] IN ('UnverifiedImport', 'Manufacturer', 'AuthorizedSupplier', 'LicensedCatalog', 'ManualExpertReview')");
+
+                            t.HasCheckConstraint("CK_ProductIdentifiers_Validity", "[ValidToUtc] IS NULL OR [ValidToUtc] > [ValidFromUtc]");
+
+                            t.HasCheckConstraint("CK_ProductIdentifiers_VerifiedSource", "[IsVerified] = 0 OR [SourceKind] <> 'UnverifiedImport'");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Refund", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("PaymentTransactionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderRefundId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("PaymentTransactionId");
+
+                    b.HasIndex("Provider", "ProviderRefundId")
+                        .IsUnique()
+                        .HasFilter("[ProviderRefundId] IS NOT NULL");
+
+                    b.ToTable("Refunds");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ReturnItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<long>("ReturnRequestId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("ReturnRequestId", "OrderItemId")
+                        .IsUnique();
+
+                    b.ToTable("ReturnItems");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ReturnRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExternalRefundConfirmationReference")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ExternalRefundRequestReference")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("RefundId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExternalRefundConfirmationReference")
+                        .IsUnique()
+                        .HasFilter("[ExternalRefundConfirmationReference] IS NOT NULL");
+
+                    b.HasIndex("ExternalRefundRequestReference")
+                        .IsUnique()
+                        .HasFilter("[ExternalRefundRequestReference] IS NOT NULL");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("RefundId")
+                        .IsUnique()
+                        .HasFilter("[RefundId] IS NOT NULL");
+
+                    b.ToTable("ReturnRequests");
                 });
 
             modelBuilder.Entity("AutoPartsStore.API.Models.Review", b =>
@@ -2214,6 +4024,313 @@ namespace AutoPartsStore.API.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("AutoPartsStore.API.Models.SalesChannel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("RequestedEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("SalesChannels", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SalesChannels_Mode", "[Mode] IN ('Disabled', 'Sandbox', 'Production')");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "Trendyol",
+                            ConcurrencyToken = new Guid("0d847fc5-94c8-4309-a14b-e8dd38cc8036"),
+                            CreatedAtUtc = new DateTime(2026, 8, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Trendyol",
+                            Mode = "Disabled",
+                            RequestedEnabled = false,
+                            UpdatedAtUtc = new DateTime(2026, 8, 5, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "Hepsiburada",
+                            ConcurrencyToken = new Guid("e7b5fd9e-418d-46d2-9951-c12944850b7b"),
+                            CreatedAtUtc = new DateTime(2026, 8, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Hepsiburada",
+                            Mode = "Disabled",
+                            RequestedEnabled = false,
+                            UpdatedAtUtc = new DateTime(2026, 8, 5, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Shipment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Carrier")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("ShippedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("TrackingNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("Carrier", "TrackingNumber")
+                        .IsUnique()
+                        .HasFilter("[Carrier] IS NOT NULL AND [TrackingNumber] IS NOT NULL");
+
+                    b.ToTable("Shipments");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ShipmentItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShipmentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("ShipmentId", "OrderItemId")
+                        .IsUnique();
+
+                    b.ToTable("ShipmentItems");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Supplier", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HealthStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Suppliers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Suppliers_HealthStatus", "[HealthStatus] IN ('Healthy', 'Degraded', 'Unhealthy')");
+
+                            t.HasCheckConstraint("CK_Suppliers_Priority", "[Priority] >= 0");
+
+                            t.HasCheckConstraint("CK_Suppliers_Timestamps", "[UpdatedAtUtc] >= [CreatedAtUtc]");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.SupplierOffer", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("AvailableQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("CanDropship")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanSupplyWarehouse")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("ExternalOfferId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LeadTimeDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinimumOrderQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OemNumber")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ShippingCost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<long>("SupplierId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("ValidUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierId", "ExternalOfferId")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId", "OemNumber", "Currency", "IsActive", "ValidUntilUtc");
+
+                    b.ToTable("SupplierOffers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SupplierOffers_Capability", "[CanDropship] = 1 OR [CanSupplyWarehouse] = 1");
+
+                            t.HasCheckConstraint("CK_SupplierOffers_Costs", "[UnitCost] >= 0 AND [ShippingCost] >= 0");
+
+                            t.HasCheckConstraint("CK_SupplierOffers_LeadTime", "[LeadTimeDays] >= 0");
+
+                            t.HasCheckConstraint("CK_SupplierOffers_Quantities", "[AvailableQuantity] >= 0 AND [MinimumOrderQuantity] > 0");
+
+                            t.HasCheckConstraint("CK_SupplierOffers_Validity", "[ValidUntilUtc] > [CreatedAtUtc]");
+                        });
+                });
+
             modelBuilder.Entity("AutoPartsStore.API.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -2227,7 +4344,8 @@ namespace AutoPartsStore.API.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -2250,7 +4368,288 @@ namespace AutoPartsStore.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.UserVehicle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CurrentOdometerKm")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Nickname")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VehicleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VehicleId");
+
+                    b.HasIndex("UserId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "IsActive");
+
+                    b.ToTable("UserVehicles", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserVehicles_Odometer", "[CurrentOdometerKm] IS NULL OR [CurrentOdometerKm] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Vehicle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyStyle")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("CanonicalKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("DriveType")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("EngineId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Market")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int?>("ProductionEndYear")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductionStartYear")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Transmission")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EngineId", "CanonicalKey")
+                        .IsUnique();
+
+                    b.ToTable("Vehicles", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Vehicles_Years", "([ProductionStartYear] IS NULL OR [ProductionStartYear] BETWEEN 1886 AND 2200) AND ([ProductionEndYear] IS NULL OR [ProductionEndYear] BETWEEN 1886 AND 2200) AND ([ProductionStartYear] IS NULL OR [ProductionEndYear] IS NULL OR [ProductionEndYear] >= [ProductionStartYear])");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleEngine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CanonicalKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int?>("DisplacementCc")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EngineCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("FuelType")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("GenerationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("PowerKw")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GenerationId", "CanonicalKey")
+                        .IsUnique();
+
+                    b.ToTable("VehicleEngines", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VehicleEngines_Specifications", "([DisplacementCc] IS NULL OR [DisplacementCc] BETWEEN 1 AND 20000) AND ([PowerKw] IS NULL OR ([PowerKw] > 0 AND [PowerKw] <= 5000))");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleGeneration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CanonicalKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("ModelId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("ProductionEndYear")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductionStartYear")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModelId", "CanonicalKey")
+                        .IsUnique();
+
+                    b.ToTable("VehicleGenerations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VehicleGenerations_Years", "([ProductionStartYear] IS NULL OR [ProductionStartYear] BETWEEN 1886 AND 2200) AND ([ProductionEndYear] IS NULL OR [ProductionEndYear] BETWEEN 1886 AND 2200) AND ([ProductionStartYear] IS NULL OR [ProductionEndYear] IS NULL OR [ProductionEndYear] >= [ProductionStartYear])");
+                        });
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleMake", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CanonicalKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CanonicalKey")
+                        .IsUnique();
+
+                    b.ToTable("VehicleMakes", (string)null);
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CanonicalKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("MakeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MakeId", "CanonicalKey")
+                        .IsUnique();
+
+                    b.ToTable("VehicleModels", (string)null);
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.BulkQuoteLine", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.BulkQuoteRequest", "BulkQuoteRequest")
+                        .WithMany("Lines")
+                        .HasForeignKey("BulkQuoteRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BulkQuoteRequest");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.BulkQuoteRequest", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AutoPartsStore.API.Models.Category", b =>
@@ -2261,6 +4660,187 @@ namespace AutoPartsStore.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ParentCategory");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ChannelInboxEvent", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.ChannelOrderLink", "ChannelOrderLink")
+                        .WithMany("InboxEvents")
+                        .HasForeignKey("ChannelOrderLinkId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AutoPartsStore.API.Models.SalesChannel", "SalesChannel")
+                        .WithMany("InboxEvents")
+                        .HasForeignKey("SalesChannelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChannelOrderLink");
+
+                    b.Navigation("SalesChannel");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ChannelListing", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.SalesChannel", "SalesChannel")
+                        .WithMany("Listings")
+                        .HasForeignKey("SalesChannelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("SalesChannel");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ChannelOrderLink", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Order", "Order")
+                        .WithOne()
+                        .HasForeignKey("AutoPartsStore.API.Models.ChannelOrderLink", "OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.SalesChannel", "SalesChannel")
+                        .WithMany("Orders")
+                        .HasForeignKey("SalesChannelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("SalesChannel");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.DealerApplication", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.CustomerGroup", "CustomerGroup")
+                        .WithMany()
+                        .HasForeignKey("CustomerGroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AutoPartsStore.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CustomerGroup");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.HostedCheckoutSession", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.InventoryReservation", "InventoryReservation")
+                        .WithOne()
+                        .HasForeignKey("AutoPartsStore.API.Models.HostedCheckoutSession", "InventoryReservationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Order", "Order")
+                        .WithOne()
+                        .HasForeignKey("AutoPartsStore.API.Models.HostedCheckoutSession", "OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("InventoryReservation");
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.InventoryReservation", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Order", "CommittedOrder")
+                        .WithOne()
+                        .HasForeignKey("AutoPartsStore.API.Models.InventoryReservation", "CommittedOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CommittedOrder");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.InventoryReservationItem", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.InventoryReservation", "InventoryReservation")
+                        .WithMany("Items")
+                        .HasForeignKey("InventoryReservationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("InventoryReservation");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.LegalAcceptance", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.LegalDocumentVersion", "LegalDocumentVersion")
+                        .WithMany("Acceptances")
+                        .HasForeignKey("LegalDocumentVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Order", "Order")
+                        .WithMany("LegalAcceptances")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LegalDocumentVersion");
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.MaintenanceRecord", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.UserVehicle", "UserVehicle")
+                        .WithMany("MaintenanceRecords")
+                        .HasForeignKey("UserVehicleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("UserVehicle");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.MaintenanceRecordItem", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.MaintenanceRecord", "MaintenanceRecord")
+                        .WithMany("Items")
+                        .HasForeignKey("MaintenanceRecordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("MaintenanceRecord");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.MaintenanceReminder", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.UserVehicle", "UserVehicle")
+                        .WithMany("Reminders")
+                        .HasForeignKey("UserVehicleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("UserVehicle");
                 });
 
             modelBuilder.Entity("AutoPartsStore.API.Models.Order", b =>
@@ -2283,10 +4863,104 @@ namespace AutoPartsStore.API.Migrations
                     b.HasOne("AutoPartsStore.API.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Order");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Payment", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Order", "Order")
+                        .WithOne("Payment")
+                        .HasForeignKey("AutoPartsStore.API.Models.Payment", "OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PaymentAttempt", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Payment", "Payment")
+                        .WithMany("Attempts")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PaymentEvent", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Payment", "Payment")
+                        .WithMany("Events")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PaymentTransaction", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.OrderItem", "OrderItem")
+                        .WithMany()
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Payment", "Payment")
+                        .WithMany("Transactions")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PriceList", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.CustomerGroup", "CustomerGroup")
+                        .WithMany("PriceLists")
+                        .HasForeignKey("CustomerGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CustomerGroup");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PriceRule", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Brand", "Brand")
+                        .WithMany()
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AutoPartsStore.API.Models.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AutoPartsStore.API.Models.PriceList", "PriceList")
+                        .WithMany("Rules")
+                        .HasForeignKey("PriceListId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Brand");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("PriceList");
 
                     b.Navigation("Product");
                 });
@@ -2318,6 +4992,91 @@ namespace AutoPartsStore.API.Migrations
                     b.Navigation("PartBrand");
                 });
 
+            modelBuilder.Entity("AutoPartsStore.API.Models.ProductFitment", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Vehicle", "Vehicle")
+                        .WithMany("ProductFitments")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ProductIdentifier", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Refund", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Payment", "Payment")
+                        .WithMany("Refunds")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.PaymentTransaction", "PaymentTransaction")
+                        .WithMany()
+                        .HasForeignKey("PaymentTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("PaymentTransaction");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ReturnItem", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.OrderItem", "OrderItem")
+                        .WithMany()
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.ReturnRequest", "ReturnRequest")
+                        .WithMany("Items")
+                        .HasForeignKey("ReturnRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("ReturnRequest");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ReturnRequest", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Refund", "Refund")
+                        .WithOne()
+                        .HasForeignKey("AutoPartsStore.API.Models.ReturnRequest", "RefundId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Refund");
+                });
+
             modelBuilder.Entity("AutoPartsStore.API.Models.Review", b =>
                 {
                     b.HasOne("AutoPartsStore.API.Models.Product", "Product")
@@ -2335,9 +5094,126 @@ namespace AutoPartsStore.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AutoPartsStore.API.Models.Shipment", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ShipmentItem", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.OrderItem", "OrderItem")
+                        .WithMany()
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Shipment", "Shipment")
+                        .WithMany("Items")
+                        .HasForeignKey("ShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("Shipment");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.SupplierOffer", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Supplier", "Supplier")
+                        .WithMany("Offers")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.UserVehicle", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AutoPartsStore.API.Models.Vehicle", "Vehicle")
+                        .WithMany()
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+
+                    b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Vehicle", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.VehicleEngine", "Engine")
+                        .WithMany("Vehicles")
+                        .HasForeignKey("EngineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Engine");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleEngine", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.VehicleGeneration", "Generation")
+                        .WithMany("Engines")
+                        .HasForeignKey("GenerationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Generation");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleGeneration", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.VehicleModel", "Model")
+                        .WithMany("Generations")
+                        .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Model");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleModel", b =>
+                {
+                    b.HasOne("AutoPartsStore.API.Models.VehicleMake", "Make")
+                        .WithMany("Models")
+                        .HasForeignKey("MakeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Make");
+                });
+
             modelBuilder.Entity("AutoPartsStore.API.Models.Brand", b =>
                 {
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.BulkQuoteRequest", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("AutoPartsStore.API.Models.Category", b =>
@@ -2347,14 +5223,115 @@ namespace AutoPartsStore.API.Migrations
                     b.Navigation("SubCategories");
                 });
 
+            modelBuilder.Entity("AutoPartsStore.API.Models.ChannelOrderLink", b =>
+                {
+                    b.Navigation("InboxEvents");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.CustomerGroup", b =>
+                {
+                    b.Navigation("PriceLists");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.InventoryReservation", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.LegalDocumentVersion", b =>
+                {
+                    b.Navigation("Acceptances");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.MaintenanceRecord", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("AutoPartsStore.API.Models.Order", b =>
                 {
+                    b.Navigation("LegalAcceptances");
+
                     b.Navigation("OrderItems");
+
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("AutoPartsStore.API.Models.PartBrand", b =>
                 {
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Payment", b =>
+                {
+                    b.Navigation("Attempts");
+
+                    b.Navigation("Events");
+
+                    b.Navigation("Refunds");
+
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.PriceList", b =>
+                {
+                    b.Navigation("Rules");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.ReturnRequest", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.SalesChannel", b =>
+                {
+                    b.Navigation("InboxEvents");
+
+                    b.Navigation("Listings");
+
+                    b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Shipment", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Supplier", b =>
+                {
+                    b.Navigation("Offers");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.UserVehicle", b =>
+                {
+                    b.Navigation("MaintenanceRecords");
+
+                    b.Navigation("Reminders");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.Vehicle", b =>
+                {
+                    b.Navigation("ProductFitments");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleEngine", b =>
+                {
+                    b.Navigation("Vehicles");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleGeneration", b =>
+                {
+                    b.Navigation("Engines");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleMake", b =>
+                {
+                    b.Navigation("Models");
+                });
+
+            modelBuilder.Entity("AutoPartsStore.API.Models.VehicleModel", b =>
+                {
+                    b.Navigation("Generations");
                 });
 #pragma warning restore 612, 618
         }

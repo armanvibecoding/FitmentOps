@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 
 const RegisterPage = () => {
@@ -31,8 +31,8 @@ const RegisterPage = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Şifre en az 6 karakter olmalıdır');
+    if (formData.password.length < 10) {
+      setError('Şifre en az 10 karakter olmalıdır');
       return;
     }
 
@@ -109,6 +109,7 @@ const RegisterPage = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                minLength={10}
                 placeholder="••••••••"
               />
             </div>
@@ -121,6 +122,7 @@ const RegisterPage = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
+                minLength={10}
                 placeholder="••••••••"
               />
             </div>
